@@ -1,7 +1,7 @@
 #BASE = /home/luis/Documents/projects/tsana
 CC		= gcc
 CFLAGS = -O -Wall
-TARGETS := freqa/bin/freqa #lireg/bin/lireg
+TARGETS := freqa/bin/freqa tspre/bin/tspre
 #TARGETS := freqa/bin/freqa lireg/bin/lireg specta/bin/specta tspre/bin/tspre
 INCLS = -I./utils/inc -I./freqa/inc -I./lireg/inc -I./specta/inc -I./tspre/inc
 LIBS = -lm 
@@ -37,8 +37,8 @@ freqa/bin/freqa: $(OBJS1)
 #specta/bin/specta: $(OBJS3)
 #	$(CC) $(CFLAGS) $(INCLS) -o specta/bin/specta $(OBJS3) $(LFLAGS) $(LIBS)
 #
-#tspre/bin/tspre: $(OBJS4)
-#	$(CC) $(CFLAGS) $(INCLS) -o tspre/bin/tspre $(OBJS4) $(LFLAGS) $(LIBS)
+tspre/bin/tspre: $(OBJS4)
+	$(CC) $(CFLAGS) $(INCLS) -o tspre/bin/tspre $(OBJS4) $(LFLAGS) $(LIBS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLS) -o $@ -c $<

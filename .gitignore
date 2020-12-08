@@ -4,3 +4,14 @@ output.jpg
 out.txt
 test.csv
 yrsum.csv
+/utils/bin/*
+/tspre/bin/*
+/freqa/bin/*
+/lireg/bin/*
+/specta/bin/*
+/utils/src/*.o
+/tspre/src/*.o
+/freqa/src/*.o
+/lireg/src/*.o
+/specta/src/*.o
+

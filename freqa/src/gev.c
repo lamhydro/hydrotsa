@@ -518,6 +518,10 @@ void yisgt0(float *data, int n, double e, double a, double *k){
 	}
 }
 
+/*
+BFGS Quasi-Newton algorithm to optimize the log-likelihood gev function and 
+find the parameters.
+*/
 pdfpar quasiNewMet(float *data, int n){
 	int i, j, i1, i2;
 	pdfpar pdfp;
@@ -654,6 +658,10 @@ pdfpar quasiNewMet(float *data, int n){
 	return pdfp;
 }
 
+/*
+Levenberg-Marquardt algorithm to optimize the log-likelihood gev function and 
+find the parameters e, a & k..
+*/
 pdfpar levenbergMarquardtMet(float *data, int n){
 	int i, j, i1, i2;
 	pdfpar pdfp;

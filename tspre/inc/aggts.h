@@ -63,6 +63,11 @@ Aggregation to every day of the year
 regi *dailyRegime(tserie *ts, int *nydays);
 
 /*
+Save a regime str (regi) into a cvs file
+*/
+int writeRegi2csv(tfile *regif, regi *dre, int *n);
+	
+/*
 Return an 1d array with the day of the year of the tserie struct ts. 
 */
 int dayOfYearTs(tserie *ts, int *dyear);

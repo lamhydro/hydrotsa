@@ -47,7 +47,17 @@ int readTSfromCSV(tfile *tsf, tserie *ts);
 Save a tserie struct into a csv file
 */
 int writeTserie2csv(tfile *tsf, tserie *ts); 
-	
+
+/*
+Save a tserie struct into a binary file
+*/
+int writeTserie2bin(tfile *tsf, tserie *ts); 
+
+/*
+Read and display bin file with tserie
+*/
+int readTserieBinFile(void);
+
 /*
 Allocate heap memory of an struct tserie
 */

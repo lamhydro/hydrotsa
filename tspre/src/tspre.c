@@ -104,7 +104,7 @@ int writeTserie2csv(tfile *tsf, tserie *ts){
 	
 	/* Write into *.csv file */
 	if ((fp = fopen(filename,"w")) == NULL){
-		printf("Error reading %s stopping... \n", filename);
+		printf("Error writing %s stopping... \n", filename);
 		return -1;
 	}
 	
@@ -126,7 +126,88 @@ int writeTserie2csv(tfile *tsf, tserie *ts){
 	return 0;
 }
 
+/*
+Save a tserie struct into a binary file
+*/
+int writeTserie2bin(tfile *tsf, tserie *ts){ 
+	unsigned i;
+	FILE *fp;
+	char *filename;
+	int tint;
+	double tdoub;
 
+	/* Make up filename */
+	filename = malloc(strlen(tsf->dirname) + strlen(tsf->filename));
+	strcpy(filename, tsf->dirname);
+	strcat(filename, tsf->filename);
+	
+	/* Write into *.csv file */
+	if ((fp = fopen(filename,"wb")) == NULL){
+		printf("Error writing %s stopping... \n", filename);
+		return -1;
+	}
+	
+	//printf("%s\n",concInts2string(x, 3, "-"));
+	//fprintf(fp,"%s,%s,%s,%s\n","YEAR", "MONTH", "DAY", "VAR");
+	for(i = 0; i < ts->n; i++){
+		printf("%d,%d,%d,%g\n", ts->year[i], ts->month[i], ts->day[i], ts->var[i]);
+		tint = ts->year[i];
+		fwrite( &tint, sizeof(int), 1, fp );
+		tint = ts->month[i];
+		fwrite( &tint, sizeof(int), 1, fp );
+		tint = ts->day[i];
+		fwrite( &tint, sizeof(int), 1, fp );
+		tdoub = ts->var[i];
+		fwrite( &tdoub, sizeof(double), 1, fp );
+	}	
+	printf("here\n");
+
+	fclose(fp);
+	free(filename);
+
+	return 0;
+}
+
+/*
+Read and display bin file with tserie
+*/
+int readTserieBinFile(void){
+
+    // Create a FILE pointer
+    FILE* my_file = NULL;
+	int year, month, day;
+	double var;
+	unsigned i;
+
+    // Open the file
+    my_file = fopen("ts.bin", "rb");
+
+    // Checking to see that the file definitely opened:
+    if (my_file == NULL) {
+        printf("Couldn't open file\n");
+        return -1;
+    }
+
+    // Read the object and store in the buffer
+	i = 0;
+	while (true){
+		fread(&year, sizeof(int), 1, my_file);
+    	fread(&month, sizeof(int), 1, my_file);
+    	fread(&day, sizeof(int), 1, my_file);
+    	fread(&var, sizeof(double), 1, my_file);
+
+		if (feof(my_file))
+			break;
+
+		// Print each element of the object
+    	printf("%d-%d-%d, %f\n", year, month, day, var);
+			i++;
+	}
+    // Close the file
+    fclose(my_file);
+	//printf("i=%d\n",i);
+    return 0;
+}
 
 /*
 Allocate heap memory of an struct tserie
@@ -704,4 +785,3 @@ int preTreatTS(tserie *ts1, tserie *ts2){
 	
 	return 0;
 }
-

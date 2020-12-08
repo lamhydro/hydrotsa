@@ -365,6 +365,7 @@ regi *dailyRegime(tserie *ts, int *nydays){
 	//int nydays;
 	
 	dayOfYearTs(ts, yday);
+	
 	*nydays = nUniqueInt(yday, ts->n);
 	ydayu = (int *)malloc(*nydays * sizeof(int));
 	uniqueInt(yday, ts->n, ydayu);
@@ -407,6 +408,36 @@ regi *dailyRegime(tserie *ts, int *nydays){
 }
 
 /*
+Save a regime str (regi) into a cvs file
+*/
+int writeRegi2csv(tfile *regif, regi *dre, int *n){
+	int i;
+	FILE *fp;
+	char *filename;
+
+	/* Make up filename */
+	filename = malloc(strlen(regif->dirname) + strlen(regif->filename));
+	strcpy(filename, regif->dirname);
+	strcat(filename, regif->filename);
+	
+	/* Write into *.csv file */
+	if ((fp = fopen(filename,"w")) == NULL){
+		printf("Error reading %s stopping... \n", filename);
+		return -1;
+	}
+	
+	/* Save dre into csv file */
+	fprintf(fp,"%s,%s,%s,%s,%s,%s\n","DAY", "MEAN", "MEDIAN", "STD","MAX","MIN");
+	for(i = 0; i < *n; i++){
+		fprintf(fp,"%d,%f,%f,%f,%f,%f\n", dre[i].x, dre[i].mean, dre[i].median, dre[i].std,dre[i].max, dre[i].min);
+	}	
+
+	free(filename);
+
+	return 0;
+}
+
+/*
 Return an 1d array with the day of the year of the tserie struct ts. 
 */
 int dayOfYearTs(tserie *ts, int *dyear){
@@ -429,13 +460,17 @@ int dayOfYearTs(tserie *ts, int *dyear){
 			ds = mktime(&da) - si0;
 			dyear[i] = dyear0 + ds/86400;
 		}else{
-			da.tm_year = ts->year[i]-1900;
+			da.tm_year = ts->year[i];
 			da.tm_mon = ts->month[i]-1;
 			da.tm_mday = ts->day[i];
 			//printf("year = %d, month = %d, day = %d\n", da.tm_year, da.tm_mon, da.tm_mday);
-			si0 = mktime(&da);
+			//printf("year = %d, month = %d, day = %d\n", ts->year[i], ts->month[i], ts->day[i]);
 			dyear0 = dayOfYear(da);
-			//printf("year = %d , Day = %d\n",da.tm_year, dyear0);
+			da.tm_year = ts->year[i]-1900;
+			si0 = mktime(&da);
+			//if (dyear0 == 0){
+			//printf("year = %d , Day = %d, si0 = %ld\n",da.tm_year, dyear0, si0);
+			//}
 			dyear[i] = dyear0;
 		}
 	}
