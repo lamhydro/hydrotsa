@@ -53,13 +53,11 @@ int writeTsYearlySummary(tfile *ysf, yrsum *ys, int n);
 /*
 Aggregation to every month of the year
 */
-//int monthlyRegime(tserie *ts, regi *mre);
 regi *monthlyRegime(tserie *ts);
 
 /*
 Aggregation to every day of the year
 */
-//int dailyRegime(tserie *ts, regi *dre);
 regi *dailyRegime(tserie *ts, int *nydays);
 
 /*
