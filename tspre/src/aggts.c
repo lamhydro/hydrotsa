@@ -357,11 +357,12 @@ regi *dailyRegime(tserie *ts, int *nydays){
 	int *ydayu;
 	regi *dre;
 	
-	ydayu = (int *)malloc(*nydays * sizeof(int));
 	yday = (int *)malloc(ts->n * sizeof(int));
 
 	dayOfYearTs(ts, yday);
 	*nydays = nUniqueInt(yday, ts->n);
+	printf("nydays = %d\n", *nydays);
+	ydayu = (int *)malloc(*nydays * sizeof(int));
 	uniqueInt(yday, ts->n, ydayu);
 
 	ascenSortInt(ydayu, *nydays); 
@@ -400,6 +401,8 @@ regi *dailyRegime(tserie *ts, int *nydays){
 		
 	/*freeMemTs(ts);*/
 	free(yday);
+	free(ydayu);
+	free(nd);
 	return dre;
 }
 
