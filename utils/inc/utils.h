@@ -6,6 +6,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <stdbool.h>
 
 #define MAXCHAR 1000
 #define MAX(i, j) (((i) > (j)) ? i : j)
@@ -17,6 +18,9 @@
 #define M_PI 3.14159265358979323846
 
 #define ERR 1.e8
+/*#define NAN (0.0/0.0)*/
+
+#define A 12 /* constant for Gamma function */
 
 typedef struct typicalFile{
 	char *dirname;
@@ -40,6 +44,13 @@ typedef struct valAndPosInArray{
 	int pos;
 	float val;
 } valpos;
+
+typedef struct csvData{
+	int year, month, day;
+	float var;
+	char var_symbol[5];
+} csvd;
+
 
 /* 
 Allocate memory for a float  m[nrows][ncols] matrix
@@ -82,12 +93,15 @@ Multiplication of float 2d array and 1d array
 */
 double *dMatVecMult(double **m, double *v, int nrows, int ncols);
 
-
 /*
 Count number of rows in a file
 */
 int nrowsFile(char *filename);
 
+/*
+Count number of rows in a bin file
+*/
+int nrowsBinFile(char *filename);
 
 /*
 Return the max. val of the x array.
@@ -203,4 +217,9 @@ float standarization(float x, float mi, float sigma);
 Absolute value of a double
 */
 double signl(double x);
+
+/*
+Concatenate an array of int into a string separated by a char
+*/
+char *concInts2string(int *x, int n, char *s);
 #endif

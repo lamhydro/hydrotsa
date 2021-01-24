@@ -1,32 +1,26 @@
 #include "utils.h"
 #include "tspre.h"
 
-//#include <string.h>
-
 /*
 /Read the time series from a csv file
 */
 int readFile(char *filename, tserie *ts)
 {
 	FILE *fp;
-
-
-	if ((fp = fopen(filename,"r")) == NULL){
-		printf("Error reading %s stopping... \n", filename);
-		exit(1);
-	
-	}
-	//printf("Reading file\n");
-	/*char *token;*/
 	int i = 0;
 	char line[MAXCHAR];
 	char *token;
 	char seps[]=",";
+	char *newline;
+
+	if ((fp = fopen(filename,"r")) == NULL){
+		printf("Error reading %s stopping... \n", filename);
+		exit(1);
+	}
 	
 	/* Read the header's file*/
 	fgets(line, MAXCHAR, fp); 
-	/*printf("%s",line);*/
-	char *newline;
+	
 	while (fgets(line, MAXCHAR, fp) != NULL){
 		/*printf("%s",line);*/
 		newline = strchr(line, '\n' );
@@ -46,11 +40,11 @@ int readFile(char *filename, tserie *ts)
 		}
 			
 		token = strtok(NULL,",");
-		//strcpy(ts->var_symbol[i], token);
+		/*strcpy(ts->var_symbol[i], token);*/
 		token = strtok(NULL,",");
 
-		//printf("%d,%d,%d,%g,%s\n", ts->year[i], ts->month[i], ts->day[i], ts->var[i], ts->var_symbol[i]);
-		//printf("%d,%d,%d,%g\n", ts->year[i], ts->month[i], ts->day[i], ts->var[i]);
+		/*printf("%d,%d,%d,%g,%s\n", ts->year[i], ts->month[i], ts->day[i], ts->var[i], ts->var_symbol[i]);*/
+		/*printf("%d,%d,%d,%g\n", ts->year[i], ts->month[i], ts->day[i], ts->var[i]);*/
 	
 		/*if (i == 80){
 			break;
@@ -63,29 +57,79 @@ int readFile(char *filename, tserie *ts)
 }
 
 /*
+Read and display bin file with tserie
+*/
+int readBinFile(char *filename, tserie *ts){
+
+	FILE *fp;
+	unsigned i;
+	csvd row;
+
+	/* Open bin file */
+	if ((fp = fopen(filename,"rb")) == NULL){
+		printf("Error opening %s stopping... \n", filename);
+		return -1;
+	}
+
+	/* Read main table */
+	i = 0;
+	while (true){
+    	fread(&row, sizeof(csvd), 1, fp);
+
+		ts->year[i] = row.year;
+		ts->month[i] = row.month;
+		ts->day[i] = row.day;
+		ts->var[i] = row.var;
+
+		if (feof(fp))
+			break;
+
+		/* Print each element of the object */
+    	printf("%d, %d, %d, %f\n", ts->year[i], ts->month[i], ts->day[i], ts->var[i]);
+		i++;
+	}
+
+    /* Close the file */
+    fclose(fp);
+    return 0;
+}
+
+/*
 Read time series from csv file
 */
-int readTSfromCSV(tfile *tsf, tserie *ts){
+/*int readTSfromFile(tfile *tsf, tserie *ts){*/
+tserie *readTSfromFile(tfile *tsf){
+	tserie *ts;
 	char *filename;
 
 	/* Make up filename */
-	filename = malloc(strlen(tsf->dirname) + strlen(tsf->filename));
+	if ((filename = malloc(strlen(tsf->dirname) + strlen(tsf->filename) + 1)) == NULL){
+		exit(0);
+	}
 	strcpy(filename, tsf->dirname);
 	strcat(filename, tsf->filename);
-	
-	/* Number of file rows */
-	tsf->nrows = nrowsFile(filename); 
 
+	/* Number of file rows */
+	tsf->nrows = nrowsBinFile(filename); 
+
+	/*printf("nrows = %d\n", tsf->nrows);*/	
 	/* Reading ts from csv file */ 
-	allocMemTs(ts, tsf->nrows-1);  /* -1 to remove header in 1rs row */ 
+	/*allocMemTs(ts, tsf->nrows);*/  /* -1 to remove header in 1rs row */ 
+	ts = allocMemTs(tsf->nrows);  /* -1 to remove header in 1rs row */ 
 	printf("Reading %s ts file with %d rows.\n", filename, tsf->nrows);
 	
 	/* Read time series from ascii file */
-	readFile(filename, ts);
+	readBinFile(filename, ts);
+	printf("ts->n = %d\n", ts->n);
+	for(int i = 0; i < 10; i++)
+		printf("ts->var = %f\n", ts->var[i]);
+	/*readFile(filename, ts);*/
+
 	free(filename);
 
-	return 0;
+	return ts;
 }
+
 
 /*
 Save a tserie struct into a csv file
@@ -98,7 +142,7 @@ int writeTserie2csv(tfile *tsf, tserie *ts){
 	int x[3];  
 
 	/* Make up filename */
-	filename = malloc(strlen(tsf->dirname) + strlen(tsf->filename));
+	filename = (char *)malloc(strlen(tsf->dirname)*sizeof(char *) + strlen(tsf->filename)*sizeof(char *));
 	strcpy(filename, tsf->dirname);
 	strcat(filename, tsf->filename);
 	
@@ -108,17 +152,16 @@ int writeTserie2csv(tfile *tsf, tserie *ts){
 		return -1;
 	}
 	
-	//printf("%s\n",concInts2string(x, 3, "-"));
-	//fprintf(fp,"%s,%s,%s,%s\n","YEAR", "MONTH", "DAY", "VAR");
+	/*printf("%s\n",concInts2string(x, 3, "-"));*/
+	/*fprintf(fp,"%s,%s,%s,%s\n","YEAR", "MONTH", "DAY", "VAR");*/
 	for(i = 0; i < ts->n; i++){
 		x[0]=ts->year[i];
 		x[1]=ts->month[i];
 		x[2]=ts->day[i];
 		str = concInts2string(x, 3, "-");
-		//printf("%s\n",str);
 		fprintf(fp,"%s,%f\n",str, ts->var[i]);
 		free(str);
-		//fprintf(fp,"%d,%d,%d,%f\n",ts->year[i], ts->month[i], ts->day[i], ts->var[i]);
+		/*fprintf(fp,"%d,%d,%d,%f\n",ts->year[i], ts->month[i], ts->day[i], ts->var[i]);*/
 	}	
 
 	free(filename);
@@ -137,7 +180,7 @@ int writeTserie2bin(tfile *tsf, tserie *ts){
 	double tdoub;
 
 	/* Make up filename */
-	filename = malloc(strlen(tsf->dirname) + strlen(tsf->filename));
+	filename = (char *)malloc(strlen(tsf->dirname)*sizeof(char *) + strlen(tsf->filename)*sizeof(char *));
 	strcpy(filename, tsf->dirname);
 	strcat(filename, tsf->filename);
 	
@@ -147,8 +190,8 @@ int writeTserie2bin(tfile *tsf, tserie *ts){
 		return -1;
 	}
 	
-	//printf("%s\n",concInts2string(x, 3, "-"));
-	//fprintf(fp,"%s,%s,%s,%s\n","YEAR", "MONTH", "DAY", "VAR");
+	/*printf("%s\n",concInts2string(x, 3, "-"));*/
+	/*fprintf(fp,"%s,%s,%s,%s\n","YEAR", "MONTH", "DAY", "VAR");*/
 	for(i = 0; i < ts->n; i++){
 		printf("%d,%d,%d,%g\n", ts->year[i], ts->month[i], ts->day[i], ts->var[i]);
 		tint = ts->year[i];
@@ -169,89 +212,89 @@ int writeTserie2bin(tfile *tsf, tserie *ts){
 }
 
 /*
-Read and display bin file with tserie
-*/
-int readTserieBinFile(void){
-
-    // Create a FILE pointer
-    FILE* my_file = NULL;
-	int year, month, day;
-	double var;
-	unsigned i;
-
-    // Open the file
-    my_file = fopen("ts.bin", "rb");
-
-    // Checking to see that the file definitely opened:
-    if (my_file == NULL) {
-        printf("Couldn't open file\n");
-        return -1;
-    }
-
-    // Read the object and store in the buffer
-	i = 0;
-	while (true){
-		fread(&year, sizeof(int), 1, my_file);
-    	fread(&month, sizeof(int), 1, my_file);
-    	fread(&day, sizeof(int), 1, my_file);
-    	fread(&var, sizeof(double), 1, my_file);
-
-		if (feof(my_file))
-			break;
-
-		// Print each element of the object
-    	printf("%d-%d-%d, %f\n", year, month, day, var);
-			i++;
-	}
-    // Close the file
-    fclose(my_file);
-	//printf("i=%d\n",i);
-    return 0;
-}
-
-/*
 Allocate heap memory of an struct tserie
 */
-void allocMemTs(tserie *ts, int n){
+/*void allocMemTs2(tserie *ts, int n){
+	ts = (tserie *)malloc(sizeof(tserie *));
 	ts->n = n;
-	ts->year = (int *)malloc(n * sizeof(int));
-	ts->month= (int *)malloc(n * sizeof(int));
-	ts->day = (int *)malloc(n * sizeof(int));
-	ts->var = (float *)malloc(n * sizeof(float));
-	//ts->var_symbol = (char *)malloc(ts->n * sizeof(char));
-	//for (int i = 0; i < ts->n; i++)
-	//	ts->var_symbol[i] = malloc(5 * sizeof(char));
+	ts->year = (int *)malloc(n * sizeof(int *));
+	ts->month= (int *)malloc(n * sizeof(int *));
+	ts->day = (int *)malloc(n * sizeof(int *));
+	ts->var = (float *)malloc(n * sizeof(float *));*/
+	/*(*ts)->n = n;*/
+	/*ts->var_symbol = (char *)malloc(ts->n * sizeof(char));*/
+	/*for (int i = 0; i < ts->n; i++)*/
+	/*	ts->var_symbol[i] = malloc(5 * sizeof(char));*/
+/*}*/
+
+tserie *allocMemTs(int n){
+	tserie *ts;
+
+	ts = (tserie *)malloc(sizeof(tserie));
+	if (ts == NULL)
+		return NULL;
+
+	ts->year = (int *)malloc(n * sizeof(int *));
+	if (ts->year == NULL){
+		free(ts->year);
+		return NULL;
+	}
+
+	ts->month= (int *)malloc(n * sizeof(int *));
+	if (ts->month == NULL){
+		free(ts->month);
+		return NULL;
+	}
+
+	ts->day = (int *)malloc(n * sizeof(int *));
+	if (ts->day == NULL){
+		free(ts->day);
+		return NULL;
+	}
+
+	ts->var = (float *)malloc(n * sizeof(float *));
+	if (ts->var == NULL){
+		free(ts->var);
+		return NULL;
+	}
+
+	ts->n = n;
+	return ts;
 }
+
 
 /*
 Free heap memory taken by tserie struct
 */
 void freeMemTs(tserie *ts){
-	free(ts->year);
-	free(ts->month);
-	free(ts->day);
-	free(ts->var);
-	//for (int i = 0; i < ts->n; i++){
-	//	free(ts->var_symbol[i]);
-	//}	
+	if (ts != NULL){
+		free(ts->year);
+		free(ts->month);
+		free(ts->day);
+		free(ts->var);
+		free(ts);
+	}
+	/*for (int i = 0; i < ts->n; i++){*/
+	/*	free(ts->var_symbol[i]);*/
+	/*}*/	
 }
 
 /*
 Remove rows that containt NAN values from  ts struct.
 */
 int removeNaNFromTs(tserie *ts1, tserie *ts2){
-	int j = 0;
-
-	//ts2->n = countNoNaNs(ts1->var, ts1->n);
-	//allocMemTs(ts2, ts2->n);
-	
-	for (int i = 0; i < ts1->n; i++){
-		if (!isnan(ts1->var[i])){
+	int j, i;
+	/*ts2->n = countNoNaNs(ts1->var, ts1->n);*/
+	/*allocMemTs(ts2, ts2->n);*/
+	j = 0;
+	for (i = 0; i < ts1->n; i++){
+		/*if (!isnan(ts1->var[i])){*/
+		if (ts1->var[i] != NAN){
 			ts2->year[j] = ts1->year[i];
 			ts2->month[j] = ts1->month[i];
 			ts2->day[j] = ts1->day[i];
 			ts2->var[j] = ts1->var[i];
-			//ts2->var_symbol[j] = ts1->var_symbol[j];	
+			/*ts2->var_symbol[j] = ts1->var_symbol[j];*/	
 			j++;
 		}
 	}
@@ -313,12 +356,12 @@ int makeUpSeqDayDates(struct tm *startdate,  int tdays, struct tm *daydates){
 	time_t t2, t2i;
 	int i;
 	time_t one_day = 86400;
-	//struct tm *ptm;
-	//char buf[256] = {0};
+	/*struct tm *ptm;*/
+	/*char buf[256] = {0};*/
 	
 	t2i = mktime(startdate);
 	for(i = 0; i < tdays; i++){
-		//t2 += one_day;
+		/*t2 += one_day;*/
 		t2 = t2i + one_day*i;
 		daydates[i] = *gmtime(&t2);  
 		/* Set to hour = 0, min = 0 and sec = 0 as it usually 
@@ -326,20 +369,19 @@ int makeUpSeqDayDates(struct tm *startdate,  int tdays, struct tm *daydates){
 		daydates[i].tm_hour = 0;
 		daydates[i].tm_min = 0;
 		daydates[i].tm_sec = 0;
-		//daydates[i].tm_mon++;
-		//daydates[i] = *ptm; // = gmtime(&t2);  
-		//daydates[i].tm_year = ptm->tm_year;
-		//daydates[i].tm_mon = ptm->tm_mon;
-//		daydates[i].tm_mday = ptm->tm_mday;
+		/*daydates[i].tm_mon++;
+		daydates[i] = *ptm;  = gmtime(&t2);  
+		daydates[i].tm_year = ptm->tm_year;
+		daydates[i].tm_mon = ptm->tm_mon;
+		daydates[i].tm_mday = ptm->tm_mday;*/
 
-		//printf(" year: %d, month:%d, day:%d, hour:%d\n", daydates[i].tm_year, daydates[i].tm_mon, daydates[i].tm_mday, daydates[i].tm_hour);
-//		strftime(buf, 256, "%F", ptm);
-		//strftime(buf, 256, "%F", &daydates[i]);
-		//puts(buf);
+		/*printf(" year: %d, month:%d, day:%d, hour:%d\n", daydates[i].tm_year, daydates[i].tm_mon, daydates[i].tm_mday, daydates[i].tm_hour);*/
+		/*strftime(buf, 256, "%F", ptm);*/
+		/*strftime(buf, 256, "%F", &daydates[i]);*/
+		/*puts(buf);*/
 	}
 	return 0;	
 }
-
 
 /*
 Switch negative values into nan in tserie struct
@@ -386,7 +428,7 @@ int nDaysYear(int year){
 }
 
 int sliceDayTimeSeries(struct tm *sdate, struct tm *edate, tserie *ts1, tserie *ts2){
-//tserie *sliceDayTimeSeries(struct tm *sdate, struct tm *edate, tserie *ts1){
+/*tserie *sliceDayTimeSeries(struct tm *sdate, struct tm *edate, tserie *ts1){
 	
 //	int i, j, start;
 //	struct tm *ta;
@@ -437,8 +479,8 @@ int sliceDayTimeSeries(struct tm *sdate, struct tm *edate, tserie *ts1, tserie *
 //	}	
 //	free(ta);
 //	free(var);
-//
-	//tserie *ts2=NULL;
+*/
+
 	struct tm da ={0};
 	int i, j;
 	int ids = 0;
@@ -454,10 +496,10 @@ int sliceDayTimeSeries(struct tm *sdate, struct tm *edate, tserie *ts1, tserie *
 		da.tm_mon = ts1->month[i]-1;
 		da.tm_mday = ts1->day[i];
 		ta = mktime(&da);
-//		if (ta == st)
+		/*if (ta == st)*/
 		if (difftime(ta,st)==0)	
 			ids = i;
-//		if (ta == en)
+		/*if (ta == en)*/
 		if (ta>=st && ta<=en)
 			j++;
 		if (difftime(ta, en)==0){
@@ -465,7 +507,7 @@ int sliceDayTimeSeries(struct tm *sdate, struct tm *edate, tserie *ts1, tserie *
 			break;
 		}
 	}
-	allocMemTs(ts2,j);
+	ts2 = allocMemTs(j);
 	j = 0;
 	for(i = ids; i <= ide; i++){
 		ts2->year[j] = ts1->year[i];
@@ -481,8 +523,9 @@ int sliceDayTimeSeries(struct tm *sdate, struct tm *edate, tserie *ts1, tserie *
 /*
 Extract one year of a time series and store in a tserie struct.
 */
-int extractOneYearTSFromTS(tserie *ts1, int year, tserie *ts2){
+tserie *extractOneYearTSFromTS(tserie *ts1, int year){
 	int i, j;
+	tserie *ts2;
 	int start, ids, ide;
 
 	start = 0;
@@ -498,7 +541,7 @@ int extractOneYearTSFromTS(tserie *ts1, int year, tserie *ts2){
 			break;
 		}
 	}
-	allocMemTs(ts2,ide-ids+1);
+	ts2 = allocMemTs(ide-ids+1);
 	j = 0;
 	for(i = ids; i <= ide; i++){
 		ts2->year[j] = ts1->year[i];
@@ -508,7 +551,7 @@ int extractOneYearTSFromTS(tserie *ts1, int year, tserie *ts2){
 		j++;
 	}
 
-	return 0;	
+	return ts2;	
 }
 
 /*
@@ -531,7 +574,7 @@ int extractOneMonthTSFromTS(tserie *ts1, int year, int month, tserie *ts2){
 			break;
 		}
 	}
-	allocMemTs(ts2,ide-ids+1);
+	ts2 = allocMemTs(ide-ids+1);
 	j = 0;
 	for(i = ids; i <= ide; i++){
 		ts2->year[j] = ts1->year[i];
@@ -553,14 +596,12 @@ int sortTS(tserie *ts1, tserie *ts2){
 	x1 = (time_t *)malloc(ts1->n * sizeof(time_t));
 	x2 = (time_t *)malloc(ts1->n * sizeof(time_t));
 
-	//printf("ts1->month = %d\n", ts1->day[0]);
 	for(i = 0; i < ts1->n; i++){
 		sd.tm_year = ts1->year[i];
 		sd.tm_mon = ts1->month[i]-1;
 		sd.tm_mday = ts1->day[i];
 		x1[i] = mktime(&sd);
 		x2[i] = x1[i];
-		//printf("x1=%ld\n",mktime(&sd));
 	}
 	
 	if (!isAscenSort((double *)x2, ts1->n)){
@@ -595,9 +636,9 @@ int sortTS(tserie *ts1, tserie *ts2){
 	
 }
 
-int preTreatTS(tserie *ts1, tserie *ts2){
+tserie *preTreatTS(tserie *ts1){
 
-	tserie tsa, tsas, tsb, tsbs;
+	tserie *ts2, *tsa, *tsas, *tsb, *tsbs;
 	dtsinv *dtsi; 
 	int i, j, k, nyears, ncyears, ndaysy;
 	int *years;
@@ -607,51 +648,50 @@ int preTreatTS(tserie *ts1, tserie *ts2){
 	struct tm *ddates;	
 	int tdays;
 	double *y1, *y2, *x1, *x2;
+	int nnonan;
 
-    //char buf[BUF_LEN] = {0};
 	/* Switch negative values into NAN in tserie struct*/
 	negativeToNanInTs(ts1);
 	
 	/* Remove rows with NAN values from time series */
-	int nnonan = countNoNaNs(ts1->var, ts1->n);
-	allocMemTs(&tsas, nnonan); 
-	allocMemTs(&tsa, nnonan); 
-	removeNaNFromTs(ts1, &tsas);
+	nnonan = countNoNaNs(ts1->var, ts1->n);
+	tsas = allocMemTs(nnonan); 
+	tsa = allocMemTs(nnonan); 
+	removeNaNFromTs(ts1, tsas);
 
 	/* Check if the time series is sorted */
-	sortTS(&tsas, &tsa);
-	freeMemTs(&tsas);
+	sortTS(tsas, tsa);
+	freeMemTs(tsas);
 	
 	/* Time series inventory */
-	nyears = nUniqueInt(tsa.year, tsa.n);
+	nyears = nUniqueInt(tsa->year, tsa->n);
 	dtsi = (dtsinv *)malloc(nyears * sizeof(dtsinv));
-	dayTSinventory(&tsa, dtsi);
-	//for(i = 0; i < nyears; i++){
-	//	printf("\n");
-	//	for (j = 0; j<dtsi[i].nmonths; j++)
-	//		printf("Year:%d, Month:%d, nmonths:%d, ndays:%d, ndayspy:%d\n",dtsi[i].year, 
-	//		dtsi[i].month[j], dtsi[i].nmonths, dtsi[i].dayspm[j], dtsi[i].ndayspy);
-	//}
+	dayTSinventory(tsa, dtsi);
+	/*for(i = 0; i < nyears; i++){
+		printf("\n");
+		for (j = 0; j<dtsi[i].nmonths; j++)
+			printf("Year:%d, Month:%d, nmonths:%d, ndays:%d, ndayspy:%d\n",dtsi[i].year, 
+			dtsi[i].month[j], dtsi[i].nmonths, dtsi[i].dayspm[j], dtsi[i].ndayspy);
+	}*/
 
 	/* Extract the portion of ts to be used. Extract 85% completed years */
 	j  = 0;
 	ncyears = 0;
 	for(i = 0; i < nyears; i++){
 		ndaysy = nDaysYear(dtsi[i].year);
-//		printf("propo %f\n", (float)dtsi[i].ndayspy/ndaysy); 
 		if ((float)dtsi[i].ndayspy/ndaysy > 0.67){
-			//printf("Year %d ndays %d\n",dtsi[i].year, dtsi[i].ndayspy);
+			/*printf("Year %d ndays %d\n",dtsi[i].year, dtsi[i].ndayspy);*/
 			j += dtsi[i].ndayspy;
 			ncyears++;
 		}
 	}
-	allocMemTs(&tsb, j);	
+	tsb = allocMemTs(j);	
 	years = (int *)malloc(ncyears * sizeof(int));
 	if (ncyears==0){
 		printf("Incomplete time series, stopping...\n");
 		free(dtsi);
-		freeMemTs(&tsa);
-		return -1;
+		freeMemTs(tsa);
+		exit(0);
 	}
 	j = 0;
 	for(i = 0; i < nyears; i++){
@@ -663,102 +703,98 @@ int preTreatTS(tserie *ts1, tserie *ts2){
 	}
 	k = 0;
 	for(i = 0; i < ncyears; i++){
-		//printf("year = %d\n",years[i]);
-		for(j = 0; j < tsa.n; j++){
-			if (tsa.year[j] == years[i]){
-				tsb.year[k] = tsa.year[j];
-				tsb.month[k] = tsa.month[j];
-				tsb.day[k] = tsa.day[j];
-				tsb.var[k] = tsa.var[j];
+		for(j = 0; j < tsa->n; j++){
+			if (tsa->year[j] == years[i]){
+				tsb->year[k] = tsa->year[j];
+				tsb->month[k] = tsa->month[j];
+				tsb->day[k] = tsa->day[j];
+				tsb->var[k] = tsa->var[j];
 				k++;
 			}
 		}
 	}
 	free(years);
-	//printf("size ts1:%d, size tsa:%d, size tsb:%d\n", ts1->n, tsa.n, tsb.n);
+	/*printf("size ts1:%d, size tsa:%d, size tsb:%d\n", ts1->n, tsa->n, tsb->n);*/
 
 	/* Get the total number of days in a completed time series */ 
-    sdate.tm_year = tsb.year[0]-1900; //1973-1900; /* years since 1900 */
-    sdate.tm_mon = 0;//tsa.month[0]-1; //8;
-    sdate.tm_mday = 1;// tsa.day[0]; //1;
-    edate.tm_year = tsb.year[tsb.n-1]-1900; //1995-1900;
-    edate.tm_mon = 11; //tsa.month[tsa.n-1]-1; //5;
-    edate.tm_mday = 31; //tsa.day[tsa.n-1]; //31;
-	//printf("tsb.year0 %d, tsb.yearN %d\n", tsb.year[0], tsb.year[tsb.n-1]);
+    sdate.tm_year = tsb->year[0]-1900;  /* years since 1900 //1973-1900;*/
+    sdate.tm_mon = 0;
+    sdate.tm_mday = 1;
+    edate.tm_year = tsb->year[(tsb->n)-1]-1900; 
+    edate.tm_mon = 11; 
+    edate.tm_mday = 31;
+	/*printf("tsb.year0 %d, tsb.yearN %d\n", tsb.year[0], tsb.year[tsb.n-1]);*/
 	tdays = difftime(mktime(&edate), mktime(&sdate))/86400 + 1;
-	//allocMemTs(ts2, tdays);	
+	/*allocMemTs(ts2, tdays);*/	
 
 	/* Interpolation for individual years */
-	nyears = nUniqueInt(tsb.year, tsb.n);
-	//printf("nyears = %d\n", nyears);
+	nyears = nUniqueInt(tsb->year, tsb->n);
+	/*printf("nyears = %d\n", nyears);*/
 	years = (int *)malloc(nyears * sizeof(int));
-	uniqueInt(tsb.year, tsb.n, years);
+	uniqueInt(tsb->year, tsb->n, years);
 	tdays = 0;
 	for(i = 0; i<nyears; i++)
 		tdays += nDaysYear(years[i]);	
-	allocMemTs(ts2, tdays);	
+	ts2 = allocMemTs(tdays);	
 		
 	k = 0;
 	for(i = 0; i < nyears; i++){
-		//printf("Year: %d\n", years[i]);
+		printf("Year: %d\n", years[i]);
 		sdate.tm_year = years[i]-1900; /* years since 1900 */
-		sdate.tm_mon = 0;//tsa.month[0]-1; //8;
-		sdate.tm_mday = 1;// tsa.day[0]; //1;
-		edate.tm_year = sdate.tm_year; //1995-1900;
-		edate.tm_mon = 11; //tsa.month[tsa.n-1]-1; //5;
-		edate.tm_mday = 31; //tsa.day[tsa.n-1]; //31;
+		sdate.tm_mon = 0;
+		sdate.tm_mday = 1;
+		edate.tm_year = sdate.tm_year; 
+		edate.tm_mon = 11; 
+		edate.tm_mday = 31; 
 		tdays = difftime(mktime(&edate), mktime(&sdate))/86400 + 1;
 		ddates = (struct tm *)malloc(tdays * sizeof(struct tm));	
 		makeUpSeqDayDates(&sdate, tdays, ddates);
-		//sliceDayTimeSeries(&sdate, &edate, &tsb, &tsbs);
-		extractOneYearTSFromTS(&tsb, years[i], &tsbs);
-		//printf("y0:%d, yn:%d\n",tsbs.year[0], tsbs.year[tsbs.n-1]);
-		//printf("tsbs.n =%d\n", tsbs.n);
+		/*sliceDayTimeSeries(&sdate, &edate, &tsb, &tsbs);*/
+		tsbs = extractOneYearTSFromTS(tsb, years[i]);
+		/*printf("y0:%d, yn:%d\n",tsbs.year[0], tsbs.year[tsbs.n-1]);*/
 
-		if (tsbs.n < tdays){
-			printf("Incomplete year %d, with days %d and tdays %d\n",years[i], tsbs.n, tdays);
-			x1 = (double *)malloc(tsbs.n * sizeof(double));
-			y1 = (double *)malloc(tsbs.n * sizeof(double));
-			for(j = 0; j < tsbs.n; j++){
-				adate.tm_year = tsbs.year[j];
-				adate.tm_mon = tsbs.month[j]-1;
-				adate.tm_mday = tsbs.day[j];
-				//adate.tm_isdst = 1;
-				//strftime(buf, BUF_LEN,"%-j",&adate);
+		if (tsbs->n < tdays){
+			printf("Incomplete year %d, with days %d and tdays %d\n",years[i], tsbs->n, tdays);
+			x1 = (double *)malloc(tsbs->n * sizeof(double));
+			y1 = (double *)malloc(tsbs->n * sizeof(double));
+			for(j = 0; j < tsbs->n; j++){
+				adate.tm_year = tsbs->year[j];
+				adate.tm_mon = tsbs->month[j]-1;
+				adate.tm_mday = tsbs->day[j];
 				x1[j] = mktime(&adate);
-				y1[j] = tsbs.var[j];
-				//printf("x1:%ld, y1:%f, year %d, month %d, day %d\n",x1[j], y1[j], tsbs.year[j], tsbs.month[j], tsbs.day[j]);
+				y1[j] = tsbs->var[j];
+				/*printf("x1:%ld, y1:%f, year %d, month %d, day %d\n",x1[j], y1[j], tsbs.year[j], tsbs.month[j], tsbs.day[j]);*/
 			}
 
 			x2 = (double *)malloc(tdays * sizeof(double));
 			y2 = (double *)malloc(tdays * sizeof(double));
-			//i1 = 0;
-			//adate.tm_year = tsbs.year[i1]-1900;
-			//adate.tm_mon = tsbs.month[i1]-1;
-			//adate.tm_mday = tsbs.day[i1];
+			/*i1 = 0;*/
+			/*adate.tm_year = tsbs.year[i1]-1900;*/
+			/*adate.tm_mon = tsbs.month[i1]-1;*/
+			/*adate.tm_mday = tsbs.day[i1];*/
 			for(j = 0; j<tdays; j++){
 				ddates[j].tm_year+=1900;
 				x2[j] = mktime(&ddates[j]);
 				ddates[j].tm_year-=1900;
-				//if (mktime(&ddates[j])==mktime(&adate)){
+				/*if (mktime(&ddates[j])==mktime(&adate)){
 				//	x1[i1] = j;
 				//	y1[i1] = tsbs.var[i1];
 				//	i1++;
 				//	adate.tm_year = tsbs.year[i1]-1900;
 				//	adate.tm_mon = tsbs.month[i1]-1;
 				//	adate.tm_mday = tsbs.day[i1];
-				//}
+				}*/
 			}
-			//for(j = 0; j < tsbs.n; j++)
-			//	printf("x1=%lf, y1=%lf, x2=%lf\n", x1[j], y1[j], x2[j]);
+			/*for(j = 0; j < tsbs.n; j++)
+				printf("x1=%lf, y1=%lf, x2=%lf\n", x1[j], y1[j], x2[j]);*/
 
-			linInterp((double *)x1, y1, tsbs.n, (double *)x2, y2, tdays);
+			linInterp((double *)x1, y1, tsbs->n, (double *)x2, y2, tdays);
 			for(j = 0; j<tdays; j++){
 				ts2->year[k] = ddates[j].tm_year + 1900;
 				ts2->month[k] = ddates[j].tm_mon + 1;
 				ts2->day[k] = ddates[j].tm_mday;
 				ts2->var[k] = y2[j];
-				//printf("year=%d, month=%d, day=%d\n", ts2->year[k], ts2->month[k], ts2->day[k]);
+				/*printf("year=%d, month=%d, day=%d\n", ts2->year[k], ts2->month[k], ts2->day[k]);*/
 				k++;
 			}
 			free(x1);
@@ -770,18 +806,19 @@ int preTreatTS(tserie *ts1, tserie *ts2){
 				ts2->year[k] = ddates[j].tm_year + 1900;
 				ts2->month[k] = ddates[j].tm_mon + 1;
 				ts2->day[k] = ddates[j].tm_mday;
-				ts2->var[k] = tsbs.var[j];
+				ts2->var[k] = tsbs->var[j];
 				k++;
 			}
 		}
 		free(ddates);
-		freeMemTs(&tsbs);
+		freeMemTs(tsbs);
 
 	}
 	free(years);
 	free(dtsi);
-	freeMemTs(&tsa);
-	freeMemTs(&tsb);
+	freeMemTs(tsa);
+	freeMemTs(tsb);
+	/*freeMemTs(ts1);*/
 	
-	return 0;
+	return ts2;
 }

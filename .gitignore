@@ -14,4 +14,9 @@ yrsum.csv
 /freqa/src/*.o
 /lireg/src/*.o
 /specta/src/*.o
+/utils/src/*.swp
+/tspre/src/*.swp
+/freqa/src/*.swp
+/lireg/src/*.swp
+/specta/src/*.swp
 
