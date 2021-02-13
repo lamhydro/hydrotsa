@@ -6,6 +6,8 @@
 
 #include "utils.h"
 
+#define RATIODAYS 0.67
+
 typedef enum weekdays{Sunday, Monday, Tuesday, Wednesday, Thursday, 
 		  Friday, Saturday} ewdays;
 
@@ -19,11 +21,10 @@ typedef struct timeSeries{
 	/*char **var_symbol;*/
 } tserie;
 
-typedef struct timeSer{
-	unsigned n;
+typedef struct completeTimeSeries{
 	struct tm dt;
 	float var;
-} tser;
+} ctserie;
 
 typedef struct dayTSinventory{
 	int year, nmonths, ndayspy;
@@ -72,12 +73,29 @@ void freeMemTs(tserie *ts);
 /*
 Pre-treatment of ts
 */
-tserie *preTreatTS(tserie *ts1);
+/*tserie *preTreatTS(tserie *ts1);*/
+ctserie *preTreatTS(tserie *ts1, int *nn);
+
+/* 
+Get most complete years in a ts 
+*/
+ctserie *getCompleteYearTS(ctserie *ts, int n, int *nc);
+
+/* 
+Fill in nan values in a ts
+*/
+ctserie *fillInNanInTS(ctserie *ts1, int n);
+
 
 /*
 Remove rows that containt NAN values from  ts struct.
 */
-int removeNaNFromTs(tserie *ts1, tserie *ts2);
+int removeNaNFromTs1(tserie *ts1, tserie *ts2);
+/*
+Remove rows that containt NAN values from  ts1 struct. Return an array of ts2 ctserie struct and its length 
+n2.
+*/
+ctserie *removeNaNFromTs2(ctserie *ts1, int n1, int *n2);
 
 /*
 Extract one year of a time series and store in a tserie struct.

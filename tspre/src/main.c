@@ -11,13 +11,14 @@
 
 int main(int argc, char *argv[])
 {
-
+	unsigned int i;
 	tfile tsf, regif;
 	tserie *ts1;
-	tserie *ts2;
+	ctserie *ts2;
 	regi *dre;
-	int nnans;
-	int nydays;
+	int nnans, n;
+	int nyday;
+	float *x;
 
 	/* Assigning ext arg to variables */
 	if( argc != 3 ) {
@@ -28,37 +29,43 @@ int main(int argc, char *argv[])
 	tsf.filename = argv[2]; /*"01BJ001_DLY_FLOWS.csv";*/
 
 	/* Reading time series files */ 
-	/*readTSfromFile(&tsf, &ts1);*/
 	ts1 = readTSfromFile(&tsf);
 
 	/* Pre-treatment of time series */
-	ts2 = preTreatTS(ts1);
+	ts2 = preTreatTS(ts1, &n);
 	/*if (preTreatTS(ts1, &ts2))
 		return -1;*/
 	
 	/*printf("ts2.n %d\n",ts2.n);*/
-	nnans = countNaNs(ts2->var, ts2->n);
-	if(nnans>0)
-		printf("NANs=%d\n", nnans);
+	x = malloc(n * sizeof(float));
+	for(i = 0; i < n; i++) x[i] = ts2[i].var;
+	nnans = countNaNs(x, n);
+	free(x);
+	if(nnans>0){
+		printf("file: %s, NANs=%d\n",tsf.filename, nnans);
+		exit(0);
+	}
 	
+
 	/* Get annual daily regime */ 
 	/*regi *dre = NULL;*/
-	/*regi *dre = (regi *)malloc(366 * sizeof(regi));*/
+	/*regi *dre = malloc(366 * sizeof(regi));*/
 	/*dailyRegime(&ts2, dre);*/
-	dre = dailyRegime(ts2, &nydays);
-	for (int i = 0; i < nydays; i++){
+	/*dre = dailyRegime(ts2, &nydays);*/
+	dre = dailyRegime(ts2, n, &nyday);
+	/*for (i = 0; i < nyday; i++){
 		printf("%d, mean = %f\n", dre[i].x, dre[i].mean);
+	}*/
+	regif.dirname = argv[1];
+	regif.filename = "dre.csv";
+	if (nyday == 367 || nyday == 364){
+		printf("-------------------------------------------nydays = %d\n",nyday);
 	}
-	/*regif.dirname = argv[1];*/
-	/*regif.filename = "dre.csv";
-	if (nydays == 367 || nydays == 364){
-		printf("-------------------------------------------nydays = %d\n",nydays);
-	}
-	writeRegi2csv(&regif, dre, &nydays);*/
+	writeRegi2csv(&regif, dre, &nyday);
 
 	free(dre);
 	freeMemTs(ts1);
-	freeMemTs(ts2);
+	free(ts2);
 	return 0;
 }
 

@@ -58,7 +58,7 @@ regi *monthlyRegime(tserie *ts);
 /*
 Aggregation to every day of the year
 */
-regi *dailyRegime(tserie *ts, int *nydays);
+regi *dailyRegime(ctserie *ts, int n, int *ny);
 
 /*
 Save a regime str (regi) into a cvs file

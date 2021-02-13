@@ -22,6 +22,12 @@
 
 #define A 12 /* constant for Gamma function */
 
+#define NSECDAY 86400 /* # of seconds in a day */
+#define IYEAR 1900	 /* # starting year for time lib. For previous year use julian day */
+
+#define true 1
+#define false 0
+
 typedef struct typicalFile{
 	char *dirname;
 	char *filename;
@@ -165,6 +171,11 @@ Return an array x2 with unique values from array x1
 int uniqueInt(int *x1, int n, int *x2);
 
 /* 
+Fill in NaN values in an array using linear interpolation
+*/
+float *fillInNaNLinInt(float *x, float *y, unsigned int n);
+	
+/* 
 Return a 1d array y2 with x2 values interpolated based on
 x1 and y1 1d arrays.
 */
@@ -175,6 +186,21 @@ Return the day of the year [1-365/366] given year, month and day
 */
 int dayOfYear(struct tm da);
 
+/*
+Create a datetime array [YYYY MM DD HH MM SS] based on a starting and end struct tm
+*/
+struct tm *dateTime(struct tm *d1, struct tm *d2, int *ndays);
+
+/* 
+Get the min struct tm of a vector of struc tm's
+*/
+struct tm minDateTime(struct tm *dt, int n);
+
+/* 
+Get the max struct tm of a vector of struc tm's
+*/
+struct tm maxDateTime(struct tm *dt, int n);
+	
 /*For calculating Determinant of the Matrix */
 double determinant(double a[NROWS][NCOLS], float k);
 

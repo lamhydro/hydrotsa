@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Input data
-RUNM=0
+RUNM=1
 #INDIR=/home/luis/Documents/cpp/HYDATsfana/dayUnregLongFLOWSandCatch/
 INDIR=/home/luis/hub/canNatFlowRegi/data/
 OUTDIR=/home/luis/hub/canNatFlowRegi
@@ -11,7 +11,8 @@ if [ $RUNM -eq 0 ]
 then
 	# Execute the code
 	#FILENAME=06AC006_DLY_FLOWS.csv
-	FILENAME=01EO003_DLY_FLOWS.bin
+	#FILENAME=01EO003_DLY_FLOWS.bin
+	FILENAME=10OC001_DLY_FLOWS.bin
 	$EXC $INDIR $FILENAME
 
 	# Copy output into a file
