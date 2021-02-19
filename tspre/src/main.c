@@ -52,6 +52,7 @@ int main(int argc, char *argv[])
 	/*regi *dre = malloc(366 * sizeof(regi));*/
 	/*dailyRegime(&ts2, dre);*/
 	/*dre = dailyRegime(ts2, &nydays);*/
+	/*printf("herere\n");*/
 	dre = dailyRegime(ts2, n, &nyday);
 	/*for (i = 0; i < nyday; i++){
 		printf("%d, mean = %f\n", dre[i].x, dre[i].mean);

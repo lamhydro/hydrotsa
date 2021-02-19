@@ -301,8 +301,7 @@ int removeNaNFromTs1(tserie *ts1, tserie *ts2){
 }
 
 /*
-Remove rows that containt NAN values from  ts1 struct. Return an array of ts2 ctserie struct and its length 
-n2.
+Remove rows that containt NAN values from  ts1 struct. Return an array of ts2 ctserie struct and its length n2.
 */
 ctserie *removeNaNFromTs2(ctserie *ts1, int n1, int *n2){
 	int j, i;
@@ -320,7 +319,8 @@ ctserie *removeNaNFromTs2(ctserie *ts1, int n1, int *n2){
 
 	j = 0;
 	for (i = 0; i < n1; i++){
-		if (ts1[i].var != NAN){
+		/*if (ts1[i].var != NAN){*/
+		if (!isnan(ts1[i].var)){
 			ts2[j].dt = ts1[i].dt;
 			ts2[j].var = ts1[i].var; 
 			j++;
@@ -798,25 +798,213 @@ ctserie *matchingTs(tserie *ts1, int *n){
 }
 
 /* 
+Complete a ctserie struct by years
+*/
+ctserie *completeCtserie(ctserie *ts, int n, int *n1){
+	unsigned int i, j, k, nyears;
+	int n2;
+	int *years, *uyears;
+	struct tm *dt1;
+	ctserie *ts1;
+	struct tm d1, d2;
+
+	/*Get years of ts*/
+	years = malloc(n * sizeof(int));
+	for (i = 0; i < n; i++){
+		/*printf("tsa[i].var = %f\n", tsa[i].var);*/
+		years[i] = ts[i].dt.tm_year;
+	}
+	nyears = nUniqueInt(years, n);
+	uyears = malloc(nyears * sizeof(int));
+	uniqueInt(years, n, uyears);
+	free(years);
+
+	/* Number of days per year */
+	/*ndaysy = malloc(nyears * sizeof(int));
+	*n1 = 0;
+	for(i = 0; i < nyears; i++){
+		if (i == 0){
+			printf("yday = %d\n", ts[0].dt.tm_yday);
+			ndaysy[i] = nDaysYear(uyears[i]+IYEAR) - ts[0].dt.tm_yday; 
+		}else if(i == nyears-1){
+			ndaysy[i] = ts[n-1].dt.tm_yday + 1;  +1 because yday(0-365) 
+		}else{
+			ndaysy[i] = nDaysYear(uyears[i]+IYEAR);
+		}
+		printf("year = %d, ndaysy = %d\n", uyears[i], ndaysy[i]);
+		*n1 += ndaysy[i];
+	}*/
+	*n1 = 0;
+	for(i = 0; i < nyears; i++){
+		if (i == 0){
+			d1.tm_sec = 1;
+			d1.tm_min = 1;
+			d1.tm_hour = 1;
+			d1.tm_mday = ts[0].dt.tm_mday;
+			d1.tm_mon = ts[0].dt.tm_mon;
+			d1.tm_year = uyears[i];
+
+			d2.tm_sec = 1;
+			d2.tm_min = 1;
+			d2.tm_hour = 1;
+			d2.tm_mday = 1;
+			d2.tm_mon = 11;
+			d2.tm_year = uyears[i];
+		}else if(i == nyears-1){
+			d1.tm_sec = 1;
+			d1.tm_min = 1;
+			d1.tm_hour = 1;
+			d1.tm_mday = 1;
+			d1.tm_mon = 0;
+			d1.tm_year = uyears[i];
+
+			d2.tm_sec = 1;
+			d2.tm_min = 1;
+			d2.tm_hour = 1;
+			d2.tm_mday = ts[n-1].dt.tm_mday;
+			d2.tm_mon = ts[n-1].dt.tm_mon;;
+			d2.tm_year = uyears[i];
+		}else{
+			d1.tm_sec = 1;
+			d1.tm_min = 1;
+			d1.tm_hour = 1;
+			d1.tm_mday = 1;
+			d1.tm_mon = 0;
+			d1.tm_year = uyears[i];
+
+			d2.tm_sec = 1;
+			d2.tm_min = 1;
+			d2.tm_hour = 1;
+			d2.tm_mday = 31;
+			d2.tm_mon = 11;
+			d2.tm_year = uyears[i];
+		}
+		/*printf("%s", asctime(&d1));
+		printf("%s", asctime(&d2));*/
+		dt1 = dateTime(&d1, &d2, &n2);
+		*n1 += n2;
+		free(dt1);
+	}
+	*n1 = *n1 + 1;
+
+	/* Complete by years */
+	/*printf("n = %d , n1 = %d\n", n, *n1);*/
+	ts1 = (ctserie *)malloc(*n1 * sizeof(ctserie));
+	k = 0;
+	for(i = 0; i < nyears; i++){
+		if (i == 0){
+			d1.tm_sec = 1;
+			d1.tm_min = 1;
+			d1.tm_hour = 1;
+			d1.tm_mday = ts[0].dt.tm_mday;
+			d1.tm_mon = ts[0].dt.tm_mon;
+			d1.tm_year = uyears[i];
+
+			d2.tm_sec = 1;
+			d2.tm_min = 1;
+			d2.tm_hour = 1;
+			d2.tm_mday = 1;
+			d2.tm_mon = 11;
+			d2.tm_year = uyears[i];
+
+			/*struct tm d1 = {1, 1, 1, ts[0].dt.tm_mday, ts[0].dt.tm_mon, ts[0].dt.tm_year};
+			struct tm d2 = {1, 1, 1, 31, 11, ts[0].dt.tm_year};*/
+		}else if(i == nyears-1){
+			d1.tm_sec = 1;
+			d1.tm_min = 1;
+			d1.tm_hour = 1;
+			d1.tm_mday = 1;
+			d1.tm_mon = 0;
+			d1.tm_year = uyears[i];
+
+			d2.tm_sec = 1;
+			d2.tm_min = 1;
+			d2.tm_hour = 1;
+			d2.tm_mday = ts[n-1].dt.tm_mday;
+			d2.tm_mon = ts[n-1].dt.tm_mon;;
+			d2.tm_year = uyears[i];
+
+			/*struct tm d1 = {1, 1, 1, 1 , 0, ts[n-1].dt.tm_year};
+			struct tm d2 = {1, 1, 1, ts[n-1].dt.tm_mday, ts[n-1].dt.tm_mon, ts[n-1].dt.tm_year};*/
+		}else{
+			d1.tm_sec = 1;
+			d1.tm_min = 1;
+			d1.tm_hour = 1;
+			d1.tm_mday = 1;
+			d1.tm_mon = 0;
+			d1.tm_year = uyears[i];
+
+			d2.tm_sec = 1;
+			d2.tm_min = 1;
+			d2.tm_hour = 1;
+			d2.tm_mday = 31;
+			d2.tm_mon = 11;
+			d2.tm_year = uyears[i];
+
+			/*struct tm d1 = {1, 1, 1, 1 , 0, ts[i].dt.tm_year};
+			struct tm d2 = {1, 1, 1, 31, 11, ts[i].dt.tm_year};*/
+		}
+		/*printf("%s", asctime(&d1));
+		printf("%s", asctime(&d2));*/
+		dt1 = dateTime(&d1, &d2, &n2);
+		/*printf("year = %d, n2 = %d\n", uyears[i], n2);*/
+		for (j = 0; j < n2; j++){
+			ts1[k].dt = dt1[j];
+			/*printf("year = %d\n", ts1[k].dt.tm_year);*/
+			/*printf("%s", asctime(&ts1[k].dt));*/
+			ts1[k].var = NAN;
+			k++;
+		}
+		free(dt1);
+	}
+	free(uyears);
+
+	/*printf("n1 = %d, k = %d\n", *n1, k);*/
+	/* Fill the var in the ts1 serie based on ts */
+	for(i = 0; i < *n1; i++){
+		for(j = 0; j < n; j++){
+			/*time_t tt1 = mktime(&ts1[i].dt);
+			time_t tt = mktime(&ts[j].dt);
+			printf("%s------>%s", asctime(&ts[j].dt), asctime(&ts1[i].dt));
+			printf("ts1 = %ld , ts = %ld\n",tt1, tt);*/
+			/*printf("ts1 = %d , ts = %d\n",ts1[i].dt.tm_year, ts[j].dt.tm_year);*/
+			/*if(tt1 == tt){*/
+			if (ts1[i].dt.tm_mday == ts[j].dt.tm_mday &&  ts1[i].dt.tm_mon == ts[j].dt.tm_mon && ts1[i].dt.tm_year == ts[j].dt.tm_year){
+				ts1[i].var = ts[j].var;
+				/*printf("i = %d, year = %d, ts1.var = %f\n", i, ts1[i].dt.tm_year, ts1[i].var);*/
+				break;
+			}
+		}
+	}
+	return ts1;
+}
+
+/* 
 Get most complete years in a ts 
 */
 ctserie *getCompleteYearTS(ctserie *ts, int n, int *nc){
 	
 	unsigned int i, j, k;
 	int *years, *cyears;
-	ctserie *tsb;
+	ctserie *tsa, *tsb, *tsc;
 	unsigned int nyears, ndaysy, ncyears;
 	dtsinv *dtsi; 
+	int n2, n1, n3;
+	
+	/* Remove nan from ctserie */
+	tsa = removeNaNFromTs2(ts, n, &n2);
+	/*printf("n = %d, n2 = %d\n", n, n2);*/
 
 	/* Time series inventory */
-	years = malloc(n * sizeof(int));
-	for (i = 0; i < n; i++){
-		years[i] = ts[i].dt.tm_year;
+	years = malloc(n2 * sizeof(int));
+	for (i = 0; i < n2; i++){
+		/*printf("tsa[i].var = %f\n", tsa[i].var);*/
+		years[i] = tsa[i].dt.tm_year;
 	}
-	nyears = nUniqueInt(years, n);
+	nyears = nUniqueInt(years, n2);
 	/*printf("nyears = %d\n", nyears);*/	
 	dtsi = (dtsinv *)malloc(nyears * sizeof(dtsinv));
-	dayTSinventory(ts, n, dtsi);
+	dayTSinventory(tsa, n2, dtsi);
 	/*for(i = 0; i < nyears; i++){
 		printf("\n");
 		for (j = 0; j<dtsi[i].nmonths; j++)
@@ -826,88 +1014,136 @@ ctserie *getCompleteYearTS(ctserie *ts, int n, int *nc){
 
 	/* Extract the portion of ts to be used. Extract 85% completed years */
 	/* Count the number of completed years */
-	*nc  = 0;
+	n1  = 0;
 	ncyears = 0;
+	/*printf("nyears = %d\n", nyears);*/
 	for(i = 0; i < nyears; i++){
-		ndaysy = nDaysYear(dtsi[i].year);
+		/*printf("i = %d, year = %d\n", i, dtsi[i].year);*/
+		ndaysy = nDaysYear(dtsi[i].year + IYEAR);
 		if ((float)dtsi[i].ndayspy/ndaysy > RATIODAYS){
 			/*printf("Year %d ndays %d\n",dtsi[i].year, dtsi[i].ndayspy);*/
-			*nc += dtsi[i].ndayspy;
+			n1 += dtsi[i].ndayspy;
 			ncyears++;
 		}
 	}
+	/*printf("ncyears = %d\n", ncyears);*/
 	/* Test is there are completed years and allocate arrays */
-	tsb = (ctserie *)malloc(*nc * sizeof(ctserie));	
+	tsb = (ctserie *)malloc(n1 * sizeof(ctserie));	
 	cyears = malloc(ncyears * sizeof(int));
 	if (ncyears==0){
 		printf("Very short time series, stopping...\n");
 		free(dtsi);
 		free(years);
 		free(cyears);
+		free(tsa);
 		free(tsb);
 		exit(0);
 	}
 	/* Save the complete years in the ts */
 	j = 0;
 	for(i = 0; i < nyears; i++){
-		ndaysy = nDaysYear(dtsi[i].year);
+		ndaysy = nDaysYear(dtsi[i].year + IYEAR);
 		if ((float)dtsi[i].ndayspy/ndaysy > RATIODAYS){
 			cyears[j] = (int)dtsi[i].year;
+			/*printf("cyears = %d\n", cyears[j]);*/
 			j++;
 		}
 	}
 	/* Save the completed years in a new array of struct ctserie */
 	k = 0;
 	for(i = 0; i < ncyears; i++){
-		for(j = 0; j < n; j++){
-			if (ts[j].dt.tm_year == cyears[i]){
-				tsb[k].dt = ts[j].dt;	
-				tsb[k].var = ts[j].var;
+		for(j = 0; j < n2; j++){
+			if (tsa[j].dt.tm_year == cyears[i]){
+				tsb[k].dt = tsa[j].dt;	
+				tsb[k].var = tsa[j].var;
 				/*printf("year = %d, month = %d, day = %d, var = %f\n",
-						tsb[k].dt.tm_year, tsb[k].dt.tm_mon, tsb[k].dt.tm_mday, tsb[k].var);*/ 
+						tsb[k].dt.tm_year, tsb[k].dt.tm_mon, tsb[k].dt.tm_mday, tsb[k].var);*/
 				k++;
 			}
 		}
 	}
+
+	free(tsa);
 	free(dtsi);
 	free(years);
 	free(cyears);
 	/*printf("ncyears = %d\n", ncyears);*/	
+	
+	tsc = completeCtserie(tsb, n1, &n3);
+	*nc = n3;
+	/*printf("year = %d, month = %d, day = %d, var = %f\n",
+						tsb[0].dt.tm_year, tsb[0].dt.tm_mon, tsb[0].dt.tm_mday, tsb[0].var);
+	printf("year = %d, month = %d, day = %d, var = %f\n",
+						tsb[n1-1].dt.tm_year, tsb[n1-1].dt.tm_mon, tsb[n1-1].dt.tm_mday, tsb[n1-1].var);
+	printf("n1 = %d, n3 = %d\n", n1, n3);
+	printf("year = %d, month = %d, day = %d, var = %f\n",
+						tsc[0].dt.tm_year, tsc[0].dt.tm_mon, tsc[0].dt.tm_mday, tsc[0].var);
+	printf("year = %d, month = %d, day = %d, var = %f\n",
+						tsc[n3-1].dt.tm_year, tsc[n3-1].dt.tm_mon, tsc[n3-1].dt.tm_mday, tsc[n3-1].var);*/
+	free(tsb);
 
-	return tsb;
-
+	return tsc;
 }
 
 /* 
-Fill in nan values in a ts
+Fill in nan values in a ts by years assuming there are data for some years
+in the middle.
 */
 ctserie *fillInNanInTS(ctserie *ts1, int n){
 
-	unsigned int i;	
+	unsigned int i, j, k, l, nyears;	
 	float *y1, *y2, *x1;
+	int *years, *uyears;
 	ctserie *ts2;
 	struct tm dt;
 
-	x1 = malloc(n * sizeof(float));
-	y1 = malloc(n * sizeof(float));
+	/*Get years of ts*/
+	years = malloc(n * sizeof(int));
+	for (i = 0; i < n; i++){
+		years[i] = ts1[i].dt.tm_year;
+	}
+	nyears = nUniqueInt(years, n);
+	uyears = (int *)malloc(nyears * sizeof(int));
+	uniqueInt(years, n, uyears);
+	free(years);
+
+	/* Fill in gaps for each years */
+	l = 0;
 	ts2 = (ctserie *)malloc(n * sizeof(ctserie));	
-
-	for (i = 0; i < n; i++){
-		dt = ts1[i].dt;
-		x1[i] = (float)mktime(&dt);
-		y1[i] = ts1[i].var;
+	for (i = 0; i < nyears; i++){ /* Loop for years in the ts */
+		k = 0;
+		for(j = 0; j < n; j++){
+			if (uyears[i] == ts1[j].dt.tm_year){
+				k++;
+			}
+		}
+		x1 = malloc(k * sizeof(float));
+		y1 = malloc(k * sizeof(float));
+	
+		k = 0;
+		for (j = 0; j < n; j++){
+			if (uyears[i] == ts1[j].dt.tm_year){
+				dt = ts1[j].dt;
+				x1[k] = (float)mktime(&dt);
+				y1[k] = ts1[j].var;
+				k++;
+			}
+		}
+		/*printf("year = %d, k = %d\n",uyears[i], k);*/	
+		y2 = fillInNaNLinInt(x1, y1, k);
+		free(x1);
+		free(y1);
+	
+		for (j = 0; j < k; j++){
+			ts2[l].dt = ts1[l].dt;
+			ts2[l].var = y2[j];
+			l++;
+			/*printf("ts1.var = %f, y2 = %f\n", ts1[i].var, y2[i]);*/
+		}
+		free(y2);
 	}
 
-	y2 = fillInNaNLinInt(x1, y1, n);
-
-	for (i = 0; i < n; i++){
-		ts2[i].dt = ts1[i].dt;
-		ts2[i].var = y2[i];
-		/*printf("ts1.var = %f, y2 = %f\n", ts1[i].var, y2[i]);*/
-	}
-
-	free(x1);
-	free(y1);
+	free(uyears);
 
 	return ts2;
 }

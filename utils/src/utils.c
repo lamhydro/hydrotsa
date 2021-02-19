@@ -716,7 +716,7 @@ int dayOfYear(struct tm da){
 }
 
 /*
-Create a datetime array [YYYY MM DD HH MM SS] based on a starting and end struct tm
+Create an array with ndays struct tm [YYYY MM DD HH MM SS] based on a starting and end struct tm
 */
 struct tm *dateTime(struct tm *d1, struct tm *d2, int *ndays){
 	time_t s1, s2, sn;

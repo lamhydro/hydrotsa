@@ -12,7 +12,7 @@ then
 	# Execute the code
 	#FILENAME=06AC006_DLY_FLOWS.csv
 	#FILENAME=01EO003_DLY_FLOWS.bin
-	FILENAME=10OC001_DLY_FLOWS.bin
+	FILENAME=05BG002_DLY_FLOWS.bin
 	$EXC $INDIR $FILENAME
 
 	# Copy output into a file
