@@ -314,6 +314,7 @@ ctserie *removeNaNFromTs2(ctserie *ts1, int n1, int *n2){
 		var[i] = ts1[i].var;
 	}
 	*n2 = countNoNaNs(var, n1);
+	free(var);
 	/*printf("nnonan = %d\n", nnonan);*/
 	ts2 = malloc(*n2 * sizeof(ctserie));
 
@@ -326,6 +327,7 @@ ctserie *removeNaNFromTs2(ctserie *ts1, int n1, int *n2){
 			j++;
 		}
 	}
+
 	return ts2;
 }
 

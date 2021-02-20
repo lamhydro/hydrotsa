@@ -396,6 +396,8 @@ regi *dailyRegime(ctserie *ts, int n, int *ny){
 		dre[i].min = minval(m,nd[i]);
 		free(m);
 	}
+	free(nd);
+	free(yday);
 	*ny = nyday;
 	return dre;
 }
@@ -488,6 +490,7 @@ int writeRegi2csv(tfile *regif, regi *dre, int *n){
 		fprintf(fp,"%d,%f,%f,%f,%f,%f\n", dre[i].x, dre[i].mean, dre[i].median, dre[i].std,dre[i].max, dre[i].min);
 	}	
 
+	fclose(fp);
 	free(filename);
 
 	return 0;
