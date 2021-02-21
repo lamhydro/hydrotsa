@@ -735,14 +735,18 @@ struct tm *dateTime(struct tm *d1, struct tm *d2, int *ndays){
 
 	/* Allocating memory */
 	*ndays = (s2-s1)/NSECDAY + 1;
-	dt = (struct tm *)malloc(*ndays * sizeof(struct tm));
+	/* *ndays = ((int)difftime(s2,s1)+1)/NSECDAY;*/
+	dt = malloc(*ndays * sizeof(struct tm));
 	sn = s1;
-	for(i = 0; i < *ndays; i++){
+	/*for(i = 0; i < *ndays; i++){*/
+	i = 0;
+	while (sn <=s2){
 		/*struct tm *gmtime(const time_t *)*/
-		
-		struct tm *dn = localtime(&sn);
+		/*struct tm *dn = localtime(&sn);*/
+		struct tm *dn = gmtime(&sn);
 		dt[i] = *dn;
 		sn += NSECDAY;
+		i++;
 	}
 	return dt;
 }
@@ -762,7 +766,8 @@ struct tm minDateTime(struct tm *dt, int n){
 		x[i] = (float)mktime(&dti);
 	}
 	mival = (time_t)minval(x, n);
-	struct tm *dtmin = localtime(&mival);
+	/*struct tm *dtmin = localtime(&mival);*/
+	struct tm *dtmin = gmtime(&mival);
 	free(x);
 	return *dtmin; 
 }
@@ -782,7 +787,8 @@ struct tm maxDateTime(struct tm *dt, int n){
 		x[i] = (float)mktime(&dti);
 	}
 	maval = (time_t)maxval(x, n);
-	struct tm *dtmax = localtime(&maval);
+	/*struct tm *dtmax = localtime(&maval);*/
+	struct tm *dtmax = gmtime(&maval);
 	free(x);
 	return *dtmax; 
 }

@@ -358,9 +358,11 @@ regi *dailyRegime(ctserie *ts, int n, int *ny){
 	yday = malloc(n * sizeof(n));
 	for(i = 0; i < n; i++){
 		yday[i] = (float)ts[i].dt.tm_yday + 1.; /* +1 because it usually goes from 0 - 365 */ 	
+		/*printf("%s", asctime(&ts[i].dt));*/
 		/*printf("yday = %d\n", (int)yday[i]);*/
 	}
 	nyday = (int)maxval(yday, n); 
+	/*printf("n = %d\n", nyday);*/
 	dre = malloc(nyday * sizeof(regi));
 
 	/* Set the array of days in a year */
@@ -377,24 +379,33 @@ regi *dailyRegime(ctserie *ts, int n, int *ny){
 				k++;
 		}
 		nd[i] = k;
+		/*printf("nd = %d\n", nd[i]);*/
 	}
 
 	/* Estimate statistics of the daily regime */
 	for(i = 0; i < nyday; i++){
-		m = malloc(nd[i] * sizeof(float));
-		k = 0;
-		for(j = 0; j < n; j++){
-			if ((int)yday[j] == dre[i].x){
-				m[k] = ts[j].var;
-				k++;
+		if (nd[i] > 0){
+			m = malloc(nd[i] * sizeof(float));
+			k = 0;
+			for(j = 0; j < n; j++){
+				if ((int)yday[j] == dre[i].x){
+					m[k] = ts[j].var;
+					k++;
+				}
 			}
+			dre[i].mean = mean(m,nd[i]);
+			dre[i].median = median(m,nd[i]);
+			dre[i].std = stdDev(m,nd[i]);
+			dre[i].max = maxval(m,nd[i]);
+			dre[i].min = minval(m,nd[i]);
+			free(m);
+		}else{
+			dre[i].mean = NAN;
+			dre[i].median = NAN;
+			dre[i].std = NAN;
+			dre[i].max = NAN;
+			dre[i].min = NAN; 
 		}
-		dre[i].mean = mean(m,nd[i]);
-		dre[i].median = median(m,nd[i]);
-		dre[i].std = stdDev(m,nd[i]);
-		dre[i].max = maxval(m,nd[i]);
-		dre[i].min = minval(m,nd[i]);
-		free(m);
 	}
 	free(nd);
 	free(yday);
