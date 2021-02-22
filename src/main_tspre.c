@@ -11,60 +11,38 @@
 
 int main(int argc, char *argv[])
 {
-	unsigned int i;
-	tfile tsf, regif;
+	tfile tsfi, tsfo;
 	tserie *ts1;
 	ctserie *ts2;
-	regi *dre;
-	int nnans, n;
-	int nyday;
-	float *x;
+	int n;
 
 	/* Assigning ext arg to variables */
-	if( argc != 3 ) {
+	if( argc != 5 ) {
+	  printf("argc = %d\n", argc);
       printf("Bad number of arguments supplied.\n");
 	  return -1;
 	}
-	tsf.dirname = argv[1]; /*"/home/luis/Documents/cpp/HYDATsfana/dayUnregLongFLOWSandCatch/";*/
-	tsf.filename = argv[2]; /*"01BJ001_DLY_FLOWS.csv";*/
+	tsfi.dirname = argv[1]; /*"/home/luis/Documents/cpp/HYDATsfana/dayUnregLongFLOWSandCatch/";*/
+	tsfi.filename = argv[2]; /*"01BJ001_DLY_FLOWS.csv";*/
+	tsfo.dirname = argv[3]; /*"/home/luis/Documents/cpp/HYDATsfana/dayUnregLongFLOWSandCatch/";*/
+	tsfo.filename = argv[4]; /*"01BJ001_DLY_FLOWS.csv";*/
 
 	/* Reading time series files */ 
-	ts1 = readTSfromFile(&tsf);
+	ts1 = readTSfromFile(&tsfi);
 
 	/* Pre-treatment of time series */
 	ts2 = preTreatTS(ts1, &n);
-	/*if (preTreatTS(ts1, &ts2))
-		return -1;*/
-	
-	/*printf("ts2.n %d\n",ts2.n);*/
-	x = malloc(n * sizeof(float));
-	for(i = 0; i < n; i++) x[i] = ts2[i].var;
-	nnans = countNaNs(x, n);
-	free(x);
-	if(nnans>0){
-		printf("file: %s, NANs=%d\n",tsf.filename, nnans);
-		exit(0);
-	}
-	
 
-	/* Get annual daily regime */ 
-	/*regi *dre = NULL;*/
-	/*regi *dre = malloc(366 * sizeof(regi));*/
-	/*dailyRegime(&ts2, dre);*/
-	/*dre = dailyRegime(ts2, &nydays);*/
-	/*printf("herere\n");*/
-	dre = dailyRegime(ts2, n, &nyday);
-	/*for (i = 0; i < nyday; i++){
-		printf("%d, mean = %f\n", dre[i].x, dre[i].mean);
+	/* Write pre-treated time series */
+	if (writeTserie2csv(&tsfo, ts2, n))
+		return -1;
+    /*nameout = strtok(tsf.filename, ".");	
+	while( nameout != NULL ) {
+      printf( " %s\n", nameout); 
+      nameout = strtok(NULL, " ");
 	}*/
-	regif.dirname = argv[1];
-	regif.filename = "dre.csv";
-	if (nyday == 367 || nyday == 364){
-		printf("-------------------------------------------nydays = %d\n",nyday);
-	}
-	writeRegi2csv(&regif, dre, &nyday);
 
-	free(dre);
+	/* Free heap mem */
 	freeMemTs(ts1);
 	free(ts2);
 	return 0;
