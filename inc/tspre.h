@@ -53,7 +53,7 @@ tserie *readTSfromFile(tfile *tsf);
 /*
 Save a tserie struct into a csv file
 */
-int writeTserie2csv(tfile *tsf, tserie *ts); 
+int writeTserie2csv(const tfile *tsf, const ctserie *ts, const int n); 
 
 /*
 Save a tserie struct into a binary file

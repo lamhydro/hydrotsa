@@ -130,14 +130,15 @@ tserie *readTSfromFile(tfile *tsf){
 
 
 /*
-Save a tserie struct into a csv file
+Save a ctserie struct into a csv file
 */
-int writeTserie2csv(tfile *tsf, tserie *ts){ 
+int writeTserie2csv(const tfile *tsf, const ctserie *ts, const int n){ 
 	int i;
 	FILE *fp;
 	char *filename;
-	char *str;
-	int x[3];  
+	/*char *str;*/
+	/*int x[3];  
+	char buf[256] = {0};*/
 
 	/* Make up filename */
 	if ((filename = malloc(strlen(tsf->dirname) + strlen(tsf->filename) + 1)) == NULL){
@@ -153,15 +154,16 @@ int writeTserie2csv(tfile *tsf, tserie *ts){
 	}
 	
 	/*printf("%s\n",concInts2string(x, 3, "-"));*/
-	/*fprintf(fp,"%s,%s,%s,%s\n","YEAR", "MONTH", "DAY", "VAR");*/
-	for(i = 0; i < ts->n; i++){
-		x[0]=ts->year[i];
-		x[1]=ts->month[i];
-		x[2]=ts->day[i];
-		str = concInts2string(x, 3, "-");
-		fprintf(fp,"%s,%f\n",str, ts->var[i]);
-		free(str);
-		/*fprintf(fp,"%d,%d,%d,%f\n",ts->year[i], ts->month[i], ts->day[i], ts->var[i]);*/
+	fprintf(fp,"%s, %s, %s, %s\n","YEAR", "MONTH", "DAY", "VAR");
+	for(i = 0; i < n; i++){
+		/*x[0]=ts[i].dt.tm_year + IYEAR;
+		x[1]=ts[i].dt.tm_mon + 1;
+		x[2]=ts[i].dt.tm_mday;
+		strftime(buf, 256, "%F", &ts[i].dt);*/
+		/*str = concInts2string(x, 3, "-");*/
+		/*fprintf(fp,"%s,%f\n",buf, ts[i].var);
+		free(str);*/
+		fprintf(fp,"%d, %d, %d, %f\n",ts[i].dt.tm_year+IYEAR, ts[i].dt.tm_mon+1, ts[i].dt.tm_mday, ts[i].var);
 	}	
 
 	free(filename);
