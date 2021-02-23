@@ -1,0 +1,22 @@
+set datafile separator ","
+set xdata time                           # Indicate that x-axis values are time values
+set timefmt "%Y, %m, %d"                   # Indicate the pattern the time values will be in
+set format x "%b/%Y"                     # Set how the dates will be displayed on the plot
+
+set ylabel "Q (m3/s)"
+set xlabel "Date"
+ 
+#set xrange ["2019-01-01":"2019-12-31"]   # Set x-axis range of values
+#set yrange [0:30]                        # Set y-axis range of values
+ 
+set key left top                         # Turn off graph legend
+set xtics rotate by -45                  # Rotate dates on x-axis 45deg for cleaner display
+set title stname						 # Set graph title
+set grid
+ 
+set terminal jpeg					# Set the output format to jpeg
+set output outfile                  # Set output file to output.jpg
+set key autotitle columnhead
+#set style line 1 lt 1 lw 3 pt 3 linecolor rgb "black"
+#set style line 2 lt 1 lw 3 pt 3 linecolor rgb "red"
+plot filename_csv using 1:4 with lines linecolor rgb "black" title "Orig", filename_pre using 1:4 with lines linecolor rgb "red" title "Pretre"
