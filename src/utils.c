@@ -478,7 +478,7 @@ int nUniqueInt(int *x, int n){
 
 	k = 0;
 	for (i = 0; i < n; i++){
-		for (j = 0; j < i; j++){
+		for (j = 0; j <= i; j++){
 			if (x[i] == x[j]){
 				break;
 			}
@@ -574,10 +574,96 @@ int linInterp(double *x1, double *y1, int n1, double *x2, double *y2, int n2){
 	return 0;
 }
 
+
+/* 
+Fill in NaN values in an array using linear interpolation. The function is used to 
+fill in NaN gaps at the beggining, middle and end parts of the array.
+*/
+float *fillInNaNLinInt(float *x, float *y, unsigned int n){
+	unsigned int i, j;
+	int start, end, start_p, end_p, initGapB, initGapE;
+	float x1, y1, x2, y2, m;
+	float *yi;
+
+	/* Initilized the interpolated array */
+	yi = malloc(n * sizeof(float));
+	for (i = 0; i < n; i++){
+		yi[i] = y[i];
+	}
+
+	/* Fill in gap at the beginning of the array */
+	i = 0;
+	while(i < n){
+		if (!isnan(y[0])) break;
+		if (isnan(y[0]) && !isnan(y[i])){
+			y1 = y[i];
+			for (j = 0; j < i; j++){
+				yi[j] = y1;
+			}
+			break;
+		}else{
+			i++;
+		}
+	}
+
+	/* Fill in gap at the end of the array */
+	i = n-1;
+	while(i >= 0){
+		if (!isnan(y[n-1])) break;
+		if (isnan(y[n-1]) && !isnan(y[i])){
+			y1 = y[i];
+			for (j = i+1; j < n; j++){
+				yi[j] = y1;
+			}
+			break;
+		}else{
+			i--;
+		}
+	}
+	
+	/* Fill in middle gaps of the array */
+	start = false;
+	end = false;
+	i = 0;
+	while (i < n){
+		/* Get limits of a gap in the middle */
+		if ((i > 0) && isnan(yi[i]) && !start){ 
+			x1 = x[i-1];
+			y1 = y[i-1];
+			start_p = i;
+			start = true;
+		}
+		if (!isnan(yi[i]) && !end && start){ 
+			x2 = x[i];
+			y2 = y[i];
+			end_p = i-1;
+			end = true;
+		}
+
+		/* Section to fill in the NAN gaps using linear interp. */
+		if (start && end){
+			/*printf("x1 = %f, y1 = %f, x2 = %f, y2 = %f\n",x1,y1,x2,y2);
+			printf("start_p = %d, end_p = %d\n", start_p, end_p);
+			printf("middle gap\n");*/
+			start = false;
+			end = false;
+			m = (y2 - y1)/(x2 - x1);
+			for (j = start_p; j <= end_p; j++){
+				/*printf("j = %d\n", j);*/
+				yi[j] = y1 + m*(x[j]-x1);
+			}
+			i = end_p+1;
+		}else{
+			i++;
+		}
+	}
+	return yi;
+}
+
 /*
 Return the day of the year [1-365/366] given year, month and day
 */
-int dayOfYear(struct tm da){
+int dayOfYear2(struct tm da){
 	int i;
 	struct tm di = { 0 };
 	struct tm de = { 0 };
@@ -605,7 +691,106 @@ int dayOfYear(struct tm da){
 			return ++i;
 		i++;	
 	}
-	return 0;
+	return -1;
+}
+
+int dayOfYear(struct tm da){
+	int i;
+	time_t sa, si;
+
+	da.tm_year -= IYEAR;
+
+	struct tm di = { 0, 0, 0, 1, 0, da.tm_year };
+
+	/* Convert datetime into seconds */
+	sa = mktime(&da); 
+	si = mktime(&di);
+
+	i = 1;
+	while (si < sa){
+		si += NSECDAY; 
+		i++;
+	}
+	return i;	
+	
+}
+
+/*
+Create an array with ndays struct tm [YYYY MM DD HH MM SS] based on a starting and end struct tm
+*/
+struct tm *dateTime(struct tm *d1, struct tm *d2, int *ndays){
+	time_t s1, s2, sn;
+	int i;
+	struct tm *dt;
+	
+	/* Converting into seconds */
+	s1 = mktime(d1); 
+	s2 = mktime(d2); 
+
+	/* Testing if d1 is previous to d2 */
+	if (s2 < s1){
+		printf("d1 must be previous to d2. Stopping...\n");
+		exit(0);
+	}
+
+	/* Allocating memory */
+	*ndays = (s2-s1)/NSECDAY + 1;
+	/* *ndays = ((int)difftime(s2,s1)+1)/NSECDAY;*/
+	dt = malloc(*ndays * sizeof(struct tm));
+	sn = s1;
+	/*for(i = 0; i < *ndays; i++){*/
+	i = 0;
+	while (sn <=s2){
+		/*struct tm *gmtime(const time_t *)*/
+		/*struct tm *dn = localtime(&sn);*/
+		struct tm *dn = gmtime(&sn);
+		dt[i] = *dn;
+		sn += NSECDAY;
+		i++;
+	}
+	return dt;
+}
+
+/* 
+Get the min struct tm of a vector of struc tm's
+*/
+struct tm minDateTime(struct tm *dt, int n){
+	unsigned int i;
+	float *x;
+	time_t mival;
+	struct tm dti;
+
+	x = malloc(n * sizeof(float));
+	for (i = 0; i < n; i++){
+		dti = dt[i];
+		x[i] = (float)mktime(&dti);
+	}
+	mival = (time_t)minval(x, n);
+	/*struct tm *dtmin = localtime(&mival);*/
+	struct tm *dtmin = gmtime(&mival);
+	free(x);
+	return *dtmin; 
+}
+
+/* 
+Get the max struct tm of a vector of struc tm's
+*/
+struct tm maxDateTime(struct tm *dt, int n){
+	unsigned int i;
+	float *x;
+	time_t maval;
+	struct tm dti;
+
+	x = malloc(n * sizeof(float));
+	for (i = 0; i < n; i++){
+		dti = dt[i];
+		x[i] = (float)mktime(&dti);
+	}
+	maval = (time_t)maxval(x, n);
+	/*struct tm *dtmax = localtime(&maval);*/
+	struct tm *dtmax = gmtime(&maval);
+	free(x);
+	return *dtmax; 
 }
 
 /*For calculating Determinant of the Matrix */

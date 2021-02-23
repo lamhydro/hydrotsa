@@ -345,10 +345,78 @@ regi *monthlyRegime(tserie *ts){
 	return mre;
 }
 
+
+
+regi *dailyRegime(ctserie *ts, int n, int *ny){
+
+	unsigned int i, j, k, nyday;
+	int *nd;
+	float *yday, *m;
+	regi *dre;
+
+	/* Number of days in a year */
+	yday = malloc(n * sizeof(n));
+	for(i = 0; i < n; i++){
+		yday[i] = (float)ts[i].dt.tm_yday + 1.; /* +1 because it usually goes from 0 - 365 */ 	
+		/*printf("%s", asctime(&ts[i].dt));*/
+		/*printf("yday = %d\n", (int)yday[i]);*/
+	}
+	nyday = (int)maxval(yday, n); 
+	/*printf("n = %d\n", nyday);*/
+	dre = malloc(nyday * sizeof(regi));
+
+	/* Set the array of days in a year */
+	for(i = 0; i < nyday; i++){
+		dre[i].x = i+1; 
+	}
+
+	/* Save the number of occurence of each year in the ts */
+	nd = malloc(nyday * sizeof(int));
+	for(i = 0; i < nyday; i++){
+		k = 0;
+		for(j = 0; j < n; j++){
+			if ((int)yday[j] == dre[i].x)
+				k++;
+		}
+		nd[i] = k;
+		/*printf("nd = %d\n", nd[i]);*/
+	}
+
+	/* Estimate statistics of the daily regime */
+	for(i = 0; i < nyday; i++){
+		if (nd[i] > 0){
+			m = malloc(nd[i] * sizeof(float));
+			k = 0;
+			for(j = 0; j < n; j++){
+				if ((int)yday[j] == dre[i].x){
+					m[k] = ts[j].var;
+					k++;
+				}
+			}
+			dre[i].mean = mean(m,nd[i]);
+			dre[i].median = median(m,nd[i]);
+			dre[i].std = stdDev(m,nd[i]);
+			dre[i].max = maxval(m,nd[i]);
+			dre[i].min = minval(m,nd[i]);
+			free(m);
+		}else{
+			dre[i].mean = NAN;
+			dre[i].median = NAN;
+			dre[i].std = NAN;
+			dre[i].max = NAN;
+			dre[i].min = NAN; 
+		}
+	}
+	free(nd);
+	free(yday);
+	*ny = nyday;
+	return dre;
+}
+
 /*
 Aggregation to every day of the year
 */
-regi *dailyRegime(tserie *ts, int *nydays){
+regi *dailyRegime2(tserie *ts, int *nydays){
 
 	int i, j, k;
 	int *nd;
@@ -357,11 +425,12 @@ regi *dailyRegime(tserie *ts, int *nydays){
 	int *ydayu;
 	regi *dre;
 	
-	ydayu = (int *)malloc(*nydays * sizeof(int));
 	yday = (int *)malloc(ts->n * sizeof(int));
 
 	dayOfYearTs(ts, yday);
+	for(i=0; i<ts->n; i++) printf("day = %d\n", yday[i]);
 	*nydays = nUniqueInt(yday, ts->n);
+	ydayu = (int *)malloc(*nydays * sizeof(int));
 	uniqueInt(yday, ts->n, ydayu);
 
 	ascenSortInt(ydayu, *nydays); 
@@ -400,6 +469,8 @@ regi *dailyRegime(tserie *ts, int *nydays){
 		
 	/*freeMemTs(ts);*/
 	free(yday);
+	free(ydayu);
+	free(nd);
 	return dre;
 }
 
@@ -412,7 +483,9 @@ int writeRegi2csv(tfile *regif, regi *dre, int *n){
 	char *filename;
 
 	/* Make up filename */
-	filename = malloc(strlen(regif->dirname) + strlen(regif->filename));
+	if ((filename = malloc(strlen(regif->dirname) + strlen(regif->filename)+1)) == NULL){
+		return -1;
+	}
 	strcpy(filename, regif->dirname);
 	strcat(filename, regif->filename);
 	
@@ -428,6 +501,7 @@ int writeRegi2csv(tfile *regif, regi *dre, int *n){
 		fprintf(fp,"%d,%f,%f,%f,%f,%f\n", dre[i].x, dre[i].mean, dre[i].median, dre[i].std,dre[i].max, dre[i].min);
 	}	
 
+	fclose(fp);
 	free(filename);
 
 	return 0;
@@ -468,6 +542,10 @@ int dayOfYearTs(tserie *ts, int *dyear){
 			//printf("year = %d , Day = %d, si0 = %ld\n",da.tm_year, dyear0, si0);
 			}*/
 			dyear[i] = dyear0;
+		}
+		if (dyear[i] == 364 || dyear[i] == 367){
+			printf("dyear[%d] = %d\n",i,dyear[i]);
+			exit(0);
 		}
 	}
 	
