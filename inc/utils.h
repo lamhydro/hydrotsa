@@ -115,9 +115,20 @@ Return the max. val of the x array.
 float maxval(float *x, int n);
 
 /*
+Return the max. val of the x array.
+*/
+int maxvald(int *x, int n);
+
+/*
 Return the position of max. val in the x array.
 */
 int imaxval(float *x, int n);
+
+/*
+Return the position of max. val in the x array.
+*/
+int imaxvald(int *x, int n);
+
 
 /*
 Return the min. val of the x array.
@@ -184,7 +195,7 @@ int linInterp(double *x1, double *y1, int n1, double *x2, double *y2, int n2);
 /*
 Return the day of the year [1-365/366] given year, month and day
 */
-int dayOfYear(struct tm da);
+int dayOfYear(struct tm *da);
 
 /*
 Create a datetime array [YYYY MM DD HH MM SS] based on a starting and end struct tm

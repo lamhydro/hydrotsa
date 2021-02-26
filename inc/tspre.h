@@ -39,6 +39,11 @@ Read the time series from a csv file
 int readFile(char *filename, tserie *ts);
 
 /*
+Read csv preprocessed time series 
+*/
+ctserie *readPreCsvTs(tfile *tsf, int *n);
+	
+/*
 Read and display bin file with tserie
 */
 int readBinFile(char *filename, tserie *ts);
@@ -73,7 +78,6 @@ void freeMemTs(tserie *ts);
 /*
 Pre-treatment of ts
 */
-/*tserie *preTreatTS(tserie *ts1);*/
 ctserie *preTreatTS(tserie *ts1, int *nn);
 
 /* 
@@ -86,7 +90,11 @@ Fill in nan values in a ts
 */
 ctserie *fillInNanInTS(ctserie *ts1, int n);
 
-
+/*
+Return the number of days in a year
+*/
+int nDaysYear(int year);
+	
 /*
 Remove rows that containt NAN values from  ts struct.
 */
@@ -100,7 +108,7 @@ ctserie *removeNaNFromTs2(ctserie *ts1, int n1, int *n2);
 /*
 Extract one year of a time series and store in a tserie struct.
 */
-tserie *extractOneYearTSFromTS(tserie *ts1, int year);
+tserie *extractOneYearTSFromTS(const ctserie *ts, const int n, int year);
 
 /*
 Extract one month of a time series and store in a tserie struct.

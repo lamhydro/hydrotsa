@@ -1,0 +1,19 @@
+set datafile separator ","
+
+set xdata time                           # Indicate that x-axis values are time values
+set timefmt "%m"                   # Indicate the pattern the time values will be in
+set format x "%b"                     # Set how the dates will be displayed on the plot
+
+set ylabel "Q (m3/s)"
+#set xlabel "Month"
+ 
+set key off                              # Turn off graph legend
+#set title 'Station'            # Set graph title
+set title stname
+set grid
+ 
+set terminal jpeg					# Set the output format to jpeg
+set output outfile                  # Set output file to output.jpg
+set key autotitle columnhead
+plot filename using  1:2 with lines linecolor rgb "red", '' using 1:3 with lines linecolor rgb "green",  ''  using 1:5 with lines linecolor rgb "black",  '' using 1:6 with lines linecolor rgb "black"
+
