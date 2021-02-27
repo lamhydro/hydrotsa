@@ -2,16 +2,18 @@
 CC		= gcc
 CFLAGS = -O -Wall -pedantic -Wstrict-prototypes -g #-pg
 #CFLAGS = -O -Wall
-TARGETS := bin/tspre
+TARGETS := bin/tspre bin/aggts
 #TARGETS := freqa/bin/freqa lireg/bin/lireg specta/bin/specta tspre/bin/tspre
 INCLS = -I./inc
 LIBS = -lm 
 LFLAGS = 
 
 #SRC = $(wildcard src/*.c)
-SRC1 = src/utils.c src/stats.c src/aggts.c src/main_tspre.c src/tspre.c 
+SRC1 = src/utils.c src/stats.c src/main_tspre.c src/tspre.c 
+SRC2 = src/utils.c src/stats.c src/aggts.c src/main_aggts.c src/tspre.c 
 
 OBJS1 = $(SRC1:.c=.o) 
+OBJS2 = $(SRC2:.c=.o) 
 
 #$(phony all): $(TARGETS)
 #.PHONY: all $(TARGETS)
@@ -28,13 +30,16 @@ all: $(TARGETS)
 bin/tspre: $(OBJS1)
 	$(CC) $(CFLAGS) $(INCLS) -o bin/tspre $(OBJS1) $(LFLAGS) $(LIBS)
 
+bin/aggts: $(OBJS2)
+	$(CC) $(CFLAGS) $(INCLS) -o bin/aggts $(OBJS2) $(LFLAGS) $(LIBS)
+
 #.o.c:
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLS) -o $@ -c $<
 	
 .PHONY: clean
 clean:
-	rm -rf $(TARGETS) $(OBJS1) a.out
+	rm -rf $(TARGETS) $(OBJS1) $(OBJS2) a.out
 
 .PHONY: test
 test:

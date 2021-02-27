@@ -6,20 +6,20 @@
 Count the number of months per year in at ts struct and then add them up
 to return a total.
 */
-int nMonthsInYearDayTs(tserie *ts){
+int nMonthsInYearDayTs(const ctserie *ts, const int n){
 	int i, j, year, month;
 
-	year = ts->year[0];
-	month = ts->month[0];
+	year = ts[0].dt.tm_year;
+	month = ts[0].dt.tm_mon;
 	j = 1;
-	for(i = 1; i < ts->n; i++){
-		if (ts->year[i] != year){
-			year = ts->year[i];
-			month = ts->month[i];
+	for(i = 1; i < n; i++){
+		if (ts[i].dt.tm_year != year){
+			year = ts[i].dt.tm_year;
+			month = ts[i].dt.tm_mon;
 			j++;
 		}
-		if (ts->month[i] != month){
-			month = ts->month[i];
+		if (ts[i].dt.tm_mon != month){
+			month = ts[i].dt.tm_mon;
 			j++;
 		}
 	}
@@ -30,26 +30,26 @@ int nMonthsInYearDayTs(tserie *ts){
 /*
 Aggreate daily ts into monthly ts.
 */
-agg *aggDayToMonth1(tserie *ts, int *n){
+agg *aggDayToMonth1(const ctserie *ts, const int n, int *nm){
 	int i,j,k, start;	
 	int month, year;
 	int *nd, *ids, *ide;
 	float *y;
 	agg *tsm;
 
-	*n = nMonthsInYearDayTs(ts);
-	tsm = (agg *)malloc(*n * sizeof(agg));
-	nd = (int *)malloc(*n * sizeof(int));
-	ids = (int *)malloc(*n * sizeof(int));
-	ide = (int *)malloc(*n * sizeof(int));
+	*nm = nMonthsInYearDayTs(ts, n);
+	tsm = (agg *)malloc(*nm * sizeof(agg));
+	nd = malloc(*nm * sizeof(int));
+	ids = malloc(*nm * sizeof(int));
+	ide = malloc(*nm * sizeof(int));
 
-	month = ts->month[0];
-	year = ts->year[0];
+	month = ts[0].dt.tm_mon;
+	year = ts[0].dt.tm_year;
 	j = 0;
 	start = 1;
 	ids[0] = 0;
-	for(i = 1; i < ts->n; i++){
-		if(ts->month[i] == month && ts->year[i] == year){
+	for(i = 1; i < n; i++){
+		if(ts[i].dt.tm_mon == month && ts[i].dt.tm_year == year){
 			if (start){
 				ids[j] = i-1;
 				start = 0;
@@ -58,24 +58,24 @@ agg *aggDayToMonth1(tserie *ts, int *n){
 			start = 1;
 			ide[j] = i-1;
 			nd[j] = ide[j] - ids[j] + 1;
-			year = ts->year[i];
-			month = ts->month[i];
+			year = ts[i].dt.tm_year;
+			month = ts[i].dt.tm_mon;
 			j++;
 		}
 	}
 	ide[j] = i-1;
 	nd[j] = ide[j] - ids[j]+1;
 
-	for (j = 0; j < *n; j++){
+	for (j = 0; j < *nm; j++){
 		k = 0;
 		y = (float *)malloc(nd[j] * sizeof(float));
 		for(i = ids[j]; i <= ide[j]; i++){
-			y[k] = ts->var[i];
+			y[k] = ts[i].var;
 			k++;
 		}
 		/*printf("year %d, month %d, ids %d, ide %d, nd %d\n", ts->year[ids[j]], ts->month[ids[j]], ids[j], ide[j], nd[j]);*/
-		tsm[j].dt.tm_year = ts->year[ids[j]];
-		tsm[j].dt.tm_mon = ts->month[ids[j]];
+		tsm[j].dt.tm_year = ts[ids[j]].dt.tm_year;
+		tsm[j].dt.tm_mon = ts[ids[j]].dt.tm_mon;
 		tsm[j].mean = mean(y,nd[j]);
 		tsm[j].median = median(y,nd[j]);
 		tsm[j].std = stdDev(y,nd[j]);
@@ -84,6 +84,9 @@ agg *aggDayToMonth1(tserie *ts, int *n){
 		/*y = realloc(y, nd[j]*sizeof(float));*/
 		free(y);
 	}
+	free(nd);
+	free(ide);
+	free(ids);
 	return tsm;
 }
 
@@ -219,22 +222,31 @@ int aggDayToYear(tserie *ts1, tserie *ts2){
 Summary of statistic per year for a time series. This suppose to be
 used for pre-treated time series
 */
-yrsum *tsYearlySummary(tserie *ts, int *nyears){
+yrsum *tsYearlySummary(const ctserie *ts, const int n, int *nyears){
 	int i;
 	int *years;
 	tserie *tsy;
 	float pe[] = {5,15,25,75,85,95};
 	float pv[6];
 	yrsum *ys;
+	int *x;
 
-	*nyears = nUniqueInt(ts->year, ts->n);
-	years = (int *)malloc(*nyears * sizeof(int));
-	uniqueInt(ts->year, ts->n, years);
-	
+	/* Get the number of years */
+	x = malloc(n * sizeof(int));
+	for(i = 0; i < n; i++){
+		x[i] = ts[i].dt.tm_year;
+	}
+	*nyears = nUniqueInt(x, n);
+
+	/* Set the years array */
+	years = malloc(*nyears * sizeof(int));
+	uniqueInt(x, n, years);
+	free(x);
+
 	ys = (yrsum *)malloc(*nyears * sizeof(yrsum));	
 
 	for(i = 0; i < *nyears; i++){
-		tsy = extractOneYearTSFromTS(ts, years[i]);
+		tsy = extractOneYearTSFromTS(ts, n, years[i]);
 		perctl(tsy->var, tsy->n, pe, 6, pv);
 		
 		ys[i].year = years[i];
@@ -257,7 +269,6 @@ yrsum *tsYearlySummary(tserie *ts, int *nyears){
 		
 		freeMemTs(tsy);
 	}
-
 	free(years);
 	return ys;
 }
@@ -265,7 +276,7 @@ yrsum *tsYearlySummary(tserie *ts, int *nyears){
 /*
 Write yearly summary of a ts into a csv file
 */
-int writeTsYearlySummary(tfile *ysf, yrsum *ys, int n){
+int writeTsYearlySummary(const tfile *ysf, const yrsum *ys, const int n){
 	int i;
 	FILE *fp;
 	char *filename;
@@ -295,33 +306,37 @@ int writeTsYearlySummary(tfile *ysf, yrsum *ys, int n){
 }
 
 /*
-Aggregation to every month of the year
+Aggregation to every month of the year using montly mean
 */
-regi *monthlyRegime(tserie *ts){
+regi *monthlyRegime(const ctserie *ts, const int n){
 
-	int i, j, k;
-	int n = 12;
-	int nd[12];
+	int i, j, k, nm;
+	int nd[NYMON];
 	float *m;
+	agg *tsm;
+	regi *mre;
 	
-	regi *mre = (regi *)malloc(n * sizeof(regi));
+	/* Aggregate to montly ts first */
+	tsm = aggDayToMonth1(ts, n, &nm);
 
-	for(i = 0; i < n; i++){
+	mre = (regi *)malloc(NYMON * sizeof(regi));
+
+	for(i = 0; i < NYMON; i++){
 		k = 0;
-		for(j = 0; j < ts->n; j++){
-			if (ts->month[j] == i+1)
+		for(j = 0; j < nm; j++){
+			if (tsm[j].dt.tm_mon == i+1)
 				k++;
 		}
 		nd[i] = k;
 	}
 	
-	for(i = 0; i < n; i++){
+	for(i = 0; i < NYMON; i++){
 		if (nd[i] > 0){	
-			m = (float *)malloc(nd[i] * sizeof(float));
+			m = malloc(nd[i] * sizeof(float));
 			k = 0;
-			for(j = 0; j < ts->n; j++){
-				if (ts->month[j] == i+1){
-					m[k] = ts->var[j];
+			for(j = 0; j < nm; j++){
+				if (tsm[j].dt.tm_mon == i+1){
+					m[k] = tsm[j].mean;
 					k++;
 				}
 			}
@@ -341,7 +356,7 @@ regi *monthlyRegime(tserie *ts){
 			mre[i].min = NAN; 
 		}
 	}
-		
+	free(tsm);	
 	return mre;
 }
 
@@ -349,33 +364,31 @@ regi *monthlyRegime(tserie *ts){
 
 regi *dailyRegime(ctserie *ts, int n, int *ny){
 
-	unsigned int i, j, k, nyday;
-	int *nd;
-	float *yday, *m;
+	unsigned int i, j, k;
+	int *nd, *yday;
+	float *m;
 	regi *dre;
 
 	/* Number of days in a year */
-	yday = malloc(n * sizeof(n));
-	for(i = 0; i < n; i++){
-		yday[i] = (float)ts[i].dt.tm_yday + 1.; /* +1 because it usually goes from 0 - 365 */ 	
-		/*printf("%s", asctime(&ts[i].dt));*/
-		/*printf("yday = %d\n", (int)yday[i]);*/
+	yday = dayOfYearTs(ts, n);
+	*ny = maxvald(yday, n); 
+	if (*ny < 365 || *ny > 366){
+		printf("Number of year day of the range %d. Stopping...\n", *ny);
+		exit(0);
 	}
-	nyday = (int)maxval(yday, n); 
-	/*printf("n = %d\n", nyday);*/
-	dre = malloc(nyday * sizeof(regi));
+	dre = malloc(*ny * sizeof(regi));
 
 	/* Set the array of days in a year */
-	for(i = 0; i < nyday; i++){
+	for(i = 0; i < *ny; i++){
 		dre[i].x = i+1; 
 	}
 
 	/* Save the number of occurence of each year in the ts */
-	nd = malloc(nyday * sizeof(int));
-	for(i = 0; i < nyday; i++){
+	nd = malloc(*ny * sizeof(int));
+	for(i = 0; i < *ny; i++){
 		k = 0;
 		for(j = 0; j < n; j++){
-			if ((int)yday[j] == dre[i].x)
+			if (yday[j] == dre[i].x)
 				k++;
 		}
 		nd[i] = k;
@@ -383,7 +396,7 @@ regi *dailyRegime(ctserie *ts, int n, int *ny){
 	}
 
 	/* Estimate statistics of the daily regime */
-	for(i = 0; i < nyday; i++){
+	for(i = 0; i < *ny; i++){
 		if (nd[i] > 0){
 			m = malloc(nd[i] * sizeof(float));
 			k = 0;
@@ -409,7 +422,6 @@ regi *dailyRegime(ctserie *ts, int n, int *ny){
 	}
 	free(nd);
 	free(yday);
-	*ny = nyday;
 	return dre;
 }
 
@@ -427,7 +439,7 @@ regi *dailyRegime2(tserie *ts, int *nydays){
 	
 	yday = (int *)malloc(ts->n * sizeof(int));
 
-	dayOfYearTs(ts, yday);
+	/*dayOfYearTs(ts, yday);*/
 	for(i=0; i<ts->n; i++) printf("day = %d\n", yday[i]);
 	*nydays = nUniqueInt(yday, ts->n);
 	ydayu = (int *)malloc(*nydays * sizeof(int));
@@ -477,7 +489,7 @@ regi *dailyRegime2(tserie *ts, int *nydays){
 /*
 Save a regime str (regi) into a cvs file
 */
-int writeRegi2csv(tfile *regif, regi *dre, int *n){
+int writeRegi2csv(const tfile *regif, const regi *dre, const int n){
 	int i;
 	FILE *fp;
 	char *filename;
@@ -491,13 +503,13 @@ int writeRegi2csv(tfile *regif, regi *dre, int *n){
 	
 	/* Write into *.csv file */
 	if ((fp = fopen(filename,"w")) == NULL){
-		printf("Error reading %s stopping... \n", filename);
+		printf("Error writing %s stopping... \n", filename);
 		return -1;
 	}
 	
 	/* Save dre into csv file */
-	fprintf(fp,"%s,%s,%s,%s,%s,%s\n","DAY", "MEAN", "MEDIAN", "STD","MAX","MIN");
-	for(i = 0; i < *n; i++){
+	fprintf(fp,"%s,%s,%s,%s,%s,%s\n","DAY","MEAN","MEDIAN","STD","MAX","MIN");
+	for(i = 0; i < n; i++){
 		fprintf(fp,"%d,%f,%f,%f,%f,%f\n", dre[i].x, dre[i].mean, dre[i].median, dre[i].std,dre[i].max, dre[i].min);
 	}	
 
@@ -508,46 +520,84 @@ int writeRegi2csv(tfile *regif, regi *dre, int *n){
 }
 
 /*
+Write the monthly time series (struct agg)
+*/
+int writeMonthlyTs2csv(const tfile *fi, const agg *ts, const int n){
+	int i;
+	FILE *fp;
+	char *filename;
+
+	/* Make up filename */
+	if ((filename = malloc(strlen(fi->dirname) + strlen(fi->filename)+1)) == NULL){
+		return -1;
+	}
+	strcpy(filename, fi->dirname);
+	strcat(filename, fi->filename);
+	
+	/* Write into *.csv file */
+	if ((fp = fopen(filename,"w")) == NULL){
+		printf("Error writing %s stopping... \n", filename);
+		return -1;
+	}
+	
+	/* Save dre into csv file */
+	fprintf(fp,"%s,%s,%s,%s,%s,%s,%s\n","YEAR", "MONTH", "MEAN", "MEDIAN", "STD", "MIN", "MAX");
+	for(i = 0; i < n; i++){
+		fprintf(fp,"%d,%d,%f,%f,%f,%f,%f\n", ts[i].dt.tm_year, ts[i].dt.tm_mon, ts[i].mean, ts[i].median, ts[i].std, ts[i].min, ts[i].max);
+	}	
+
+	fclose(fp);
+	free(filename);
+
+	return 0;
+
+}
+
+/*
 Return an 1d array with the day of the year of the tserie struct ts. 
 */
-int dayOfYearTs(tserie *ts, int *dyear){
+int *dayOfYearTs(const ctserie *ts, const int n){
 	int i;
+	int *dyear;
 	int dyear0;
 	time_t si0, ds;
 	struct tm da = { 0 };
-
-	da.tm_year = ts->year[0]-1900;
-	da.tm_mon = ts->month[0]-1;
-	da.tm_mday = ts->day[0];
+	
+	dyear = malloc(n * sizeof(int));
+	da.tm_year = ts[0].dt.tm_year-IYEAR;
+	da.tm_mon = ts[0].dt.tm_mon-1;
+	da.tm_mday = ts[0].dt.tm_mday;
 	si0 = mktime(&da);
-	dyear0 = dayOfYear(da);
+	dyear0 = dayOfYear(&da);
 	dyear[0] = dyear0;
-	for(i = 1; i < ts->n; i++){
-		if(ts->year[i] == ts->year[i-1]){
-			da.tm_year = ts->year[i]-1900;
-			da.tm_mon = ts->month[i]-1;
-			da.tm_mday = ts->day[i];
+	for(i = 1; i < n; i++){
+		if(ts[i].dt.tm_year == ts[i-1].dt.tm_year){
+			da.tm_year = ts[i].dt.tm_year-IYEAR;
+			da.tm_mon = ts[i].dt.tm_mon-1;
+			da.tm_mday = ts[i].dt.tm_mday;
 			ds = mktime(&da) - si0;
-			dyear[i] = dyear0 + ds/86400;
+			dyear[i] = dyear0 + ds/NSECDAY;
 		}else{
-			da.tm_year = ts->year[i];
-			da.tm_mon = ts->month[i]-1;
-			da.tm_mday = ts->day[i];
+			da.tm_year = ts[i].dt.tm_year-IYEAR;
+			da.tm_mon = ts[i].dt.tm_mon-1;
+			da.tm_mday = ts[i].dt.tm_mday;
 			/*printf("year = %d, month = %d, day = %d\n", da.tm_year, da.tm_mon, da.tm_mday);*/
 			/*printf("year = %d, month = %d, day = %d\n", ts->year[i], ts->month[i], ts->day[i]);*/
-			dyear0 = dayOfYear(da);
-			da.tm_year = ts->year[i]-1900;
+			dyear0 = dayOfYear(&da);
+			/*da.tm_year = ts[i].dt.tm_year-IYEAR;*/
 			si0 = mktime(&da);
 			/*if (dyear0 == 0){
 			//printf("year = %d , Day = %d, si0 = %ld\n",da.tm_year, dyear0, si0);
 			}*/
 			dyear[i] = dyear0;
 		}
-		if (dyear[i] == 364 || dyear[i] == 367){
+		/*if (dyear[i] == 364 || dyear[i] == 367){
 			printf("dyear[%d] = %d\n",i,dyear[i]);
 			exit(0);
-		}
+		}*/
 	}
 	
-	return 0;
+	return dyear;
 }
+
+

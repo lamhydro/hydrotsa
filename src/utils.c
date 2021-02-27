@@ -260,11 +260,41 @@ float maxval(float *x, int n){
 }
 
 /*
+Return the max. val of the x array.
+*/
+int maxvald(int *x, int n){
+ 	int i;
+ 	int max = x[0];
+	for(i = 1; i < n; i++) {
+ 		if ( x[i] > max ){
+			max = x[i]; 
+		}
+	} 
+	return max;	
+}
+
+/*
 Return the position of max. val in the x array.
 */
 int imaxval(float *x, int n){
  	int i;
  	float max = x[0];
+	int imax = 0;
+	for(i = 1; i < n; i++) {
+ 		if ( x[i] > max ){
+			max = x[i]; 
+			imax = i;
+		}
+	} 
+	return imax;	
+}
+
+/*
+Return the position of max. val in the x array.
+*/
+int imaxvald(int *x, int n){
+ 	int i;
+ 	int max = x[0];
 	int imax = 0;
 	for(i = 1; i < n; i++) {
  		if ( x[i] > max ){
@@ -694,16 +724,14 @@ int dayOfYear2(struct tm da){
 	return -1;
 }
 
-int dayOfYear(struct tm da){
+int dayOfYear(struct tm *da){
 	int i;
 	time_t sa, si;
 
-	da.tm_year -= IYEAR;
-
-	struct tm di = { 0, 0, 0, 1, 0, da.tm_year };
+	struct tm di = { 0, 0, 0, 1, 0, da->tm_year };
 
 	/* Convert datetime into seconds */
-	sa = mktime(&da); 
+	sa = mktime(da); 
 	si = mktime(&di);
 
 	i = 1;
